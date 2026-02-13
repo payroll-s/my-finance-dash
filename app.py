@@ -9,58 +9,64 @@ import plotly.express as px
 # ページ設定
 st.set_page_config(page_title="Dragon Cyber Terminal", layout="wide")
 
-# --- サイバー・スタイル（宇宙・ネオン） ---
+# --- サイバー・スタイル（サイドバー強化版） ---
 st.markdown("""
     <style>
-    .stApp {
-        background-color: #050a14;
-        background-image: radial-gradient(circle at 50% 50%, #112244 0%, #050a14 100%);
-    }
-    
-    .stMetric, .portfolio-card, .stExpander {
-        background-color: rgba(16, 20, 35, 0.8) !important;
-        border: 1px solid #00f2ff !important;
-        border-radius: 10px !important;
-        box-shadow: 0 0 15px rgba(0, 242, 255, 0.2);
+    /* 1. サイドバー全体の背景：深宇宙の透過ブラック */
+    [data-testid="stSidebar"] {
+        background-color: rgba(5, 10, 20, 0.95) !important;
+        border-right: 1px solid #00f2ff;
     }
 
-    .portfolio-card {
-        border: 2px solid #ff00ff !important;
-        box-shadow: 0 0 20px rgba(255, 0, 255, 0.3);
-        padding: 30px;
-        margin-bottom: 30px;
+    /* 2. サイドバー内の各セクションをカード化 */
+    [data-testid="stVerticalBlock"] > div[style*="flex-direction: column;"] > div {
+        background: rgba(0, 242, 255, 0.05);
+        border-radius: 5px;
+        padding: 10px;
+        margin-bottom: 10px;
     }
 
-    [data-testid="stMetricValue"] {
+    /* 3. サイドバーの見出しをネオンブルーに */
+    [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 {
         color: #00f2ff !important;
+        text-shadow: 0 0 8px #00f2ff;
         font-family: 'Courier New', monospace;
-        text-shadow: 0 0 10px #00f2ff;
-        font-size: 2.5rem !important;
+        letter-spacing: 2px;
     }
 
-    h1 {
-        color: #00f2ff;
-        text-align: center;
+    /* 4. 入力ボックスのカスタマイズ */
+    .stTextInput input, .stNumberInput input, .stSelectbox div[data-baseweb="select"] {
+        background-color: #050a14 !important;
+        color: #00f2ff !important;
+        border: 1px solid #00f2ff !important;
+    }
+
+    /* 5. 「ADD UNIT」ボタンをマゼンタの光るボタンに */
+    .stButton>button {
+        width: 100%;
+        background: transparent !important;
+        color: #ff00ff !important;
+        border: 2px solid #ff00ff !important;
         text-transform: uppercase;
-        letter-spacing: 5px;
-        text-shadow: 2px 2px 10px #00f2ff;
+        letter-spacing: 2px;
+        transition: 0.3s;
+    }
+    .stButton>button:hover {
+        background: #ff00ff !important;
+        color: white !important;
+        box-shadow: 0 0 20px #ff00ff;
     }
 
-    /* ポートフォリオ未入力時のメッセージ（明るいネオンイエロー） */
-    .warning-text {
-        color: #ffff00;
-        font-weight: bold;
-        text-align: center;
-        text-shadow: 0 0 10px #ffff00;
-        padding: 20px;
-    }
-    
+    /* メイン画面のスタイル（既存） */
+    .stApp { background-color: #050a14; background-image: radial-gradient(circle at 50% 50%, #112244 0%, #050a14 100%); }
+    .portfolio-card { border: 2px solid #ff00ff !important; box-shadow: 0 0 20px rgba(255, 0, 255, 0.3); padding: 30px; margin-bottom: 30px; background-color: rgba(16, 20, 35, 0.8) !important; }
+    [data-testid="stMetricValue"] { color: #00f2ff !important; font-family: 'Courier New', monospace; text-shadow: 0 0 10px #00f2ff; font-size: 2.5rem !important; }
+    h1 { color: #00f2ff; text-align: center; text-transform: uppercase; letter-spacing: 5px; text-shadow: 2px 2px 10px #00f2ff; }
+    .warning-text { color: #ffff00; font-weight: bold; text-align: center; text-shadow: 0 0 10px #ffff00; padding: 20px; }
     .buy-zone { background-color: rgba(0, 255, 0, 0.1); border: 2px solid #00ff00; color: #00ff00; padding: 15px; border-radius: 10px; font-weight: bold; text-align: center; }
     .sell-zone { background-color: rgba(255, 0, 0, 0.1); border: 2px solid #ff4b4b; color: #ff4b4b; padding: 15px; border-radius: 10px; font-weight: bold; text-align: center; }
     </style>
     """, unsafe_allow_html=True)
-
-st.title("🛰️ Dragon Cyber Terminal v3.1")
 
 # --- サイドバー：構成の入れ替え ---
 with st.sidebar:
@@ -175,3 +181,4 @@ for t_code in tickers:
                               xaxis=dict(showgrid=False), yaxis=dict(showgrid=True, gridcolor='#112244'))
             st.plotly_chart(fig, use_container_width=True)
     except: continue
+
