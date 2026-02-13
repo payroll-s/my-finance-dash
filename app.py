@@ -172,3 +172,13 @@ for t_code in tickers:
             fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', height=200, margin=dict(l=0,r=0,t=0,b=0), font_color="#00f2ff", xaxis=dict(showgrid=False), yaxis=dict(showgrid=True, gridcolor='#112244'))
             st.plotly_chart(fig, use_container_width=True)
     except: continue
+
+with st.expander("❓ SYSTEM HELP / OPERATIONAL GUIDE"):
+    st.markdown("""
+    ### 🛰️ 操作マニュアル
+    1. **SCAN TARGETS**: 銘柄コードを入力（日本株は末尾に .T）。
+    2. **FLEET DATA**: 保有単価と数量を入力して資産をスキャン。
+    3. **DIV YIELD**: 配当利回りを自動表示。
+    4. **X-DAY**: LPPLSモデルによるトレンド転換の予測日。
+    5. **SIGNALS**: RSIに基づき、龍の目覚め（買い）と過熱（売り）を警告。
+    """)
