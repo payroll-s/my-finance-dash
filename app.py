@@ -32,7 +32,7 @@ st.sidebar.header("🔍 銘柄分析ターゲット")
 ticker_input = st.sidebar.text_input("分析したい銘柄（カンマ区切り）", value="XRP-USD, 7203.T, AAPL").upper()
 tickers = [t.strip() for t in ticker_input.split(",")]
 
-# --- データ取得・ポートフォリオ計算 ---
+# --- データ取得・ポートフォリオ計算（修正版） ---
 def get_portfolio_data(raw_input):
     lines = raw_input.strip().split('\n')
     data = []
@@ -41,14 +41,19 @@ def get_portfolio_data(raw_input):
     
     for line in lines:
         try:
-            t, price, qty = line.split(',')
-            t = t.strip().upper()
-            price = float(price)
-            qty = float(qty)
+            parts = line.split(',')
+            if len(parts) < 3: continue
+            
+            t = parts[0].strip().upper()
+            price = float(parts[1])
+            qty = float(parts[2])
             
             # 現在価格を取得
             curr_df = yf.download(t, period="1d", progress=False)
-            curr_price = curr_df['Close'].iloc[-1]
+            if curr_df.empty: continue
+            
+            # 【修正ポイント】数字だけを確実に取得
+            curr_price = float(curr_df['Close'].iloc[-1])
             
             value = curr_price * qty
             cost = price * qty
@@ -57,10 +62,9 @@ def get_portfolio_data(raw_input):
             data.append({"銘柄": t, "保有数": qty, "取得単価": price, "現在値": curr_price, "評価額": value, "損益": profit})
             total_cost += cost
             total_value += value
-        except:
+        except Exception as e:
             continue
     return pd.DataFrame(data), total_cost, total_value
-
 # --- 1. ポートフォリオ・ダッシュボード ---
 st.markdown('<div class="portfolio-card">', unsafe_allow_html=True)
 st.subheader("🏦 マイ・ポートフォリオ合計")
@@ -117,3 +121,4 @@ for ticker in tickers:
             st.plotly_chart(fig, use_container_width=True)
     except:
         st.error(f"{ticker} の分析に失敗しました。")
+
