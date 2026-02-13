@@ -6,15 +6,12 @@ from lppls import lppls
 import plotly.graph_objects as go
 import plotly.express as px
 
-# ページ基本設定
+# 1. Page Configuration
 st.set_page_config(page_title="Dragon King Theory", layout="wide")
 
-# --- CYBER BLUE STYLE (FIXED TOOLTIP) ---
+# 2. Cyber Blue Style & Fixed Tooltip
 st.markdown("""
     <style>
-st.markdown("""
-    <style>
-    /* 1. Global Color */
     html, body, [class*="css"], .stMarkdown, p, span, label, li {
         color: #00f2ff !important;
         font-family: 'Courier New', monospace;
@@ -23,13 +20,10 @@ st.markdown("""
         background-color: #050a14;
         background-image: radial-gradient(circle at 50% 50%, #112244 0%, #050a14 100%);
     }
-    
-    /* 2. Tooltip (Navy Background & Cyan Border) */
     div[data-baseweb="tooltip"] {
         background-color: #050a14 !important;
         border: 1px solid #00f2ff !important;
         border-radius: 8px !important;
-        box-shadow: 0 0 10px rgba(0, 242, 255, 0.5) !important;
     }
     div[data-baseweb="tooltip"] * {
         color: #00f2ff !important;
@@ -38,8 +32,6 @@ st.markdown("""
     div[data-testid="stTooltipHoverTarget"] svg {
         fill: #00f2ff !important;
     }
-
-    /* 3. Layout Elements */
     [data-testid="stSidebar"] {
         background-color: rgba(5, 10, 20, 0.95) !important;
         border-right: 1px solid #00f2ff;
@@ -56,8 +48,6 @@ st.markdown("""
         padding: 30px;
         margin-bottom: 30px;
     }
-
-    /* 4. Text & Metrics */
     .main-title {
         color: #00f2ff !important;
         text-transform: uppercase;
@@ -75,8 +65,6 @@ st.markdown("""
         font-size: 2.2rem !important;
         font-weight: 800 !important;
     }
-
-    /* 5. Inputs & Buttons */
     input, textarea, select, .stTextInput div, .stNumberInput div {
         background-color: #050a14 !important;
         color: #00f2ff !important;
@@ -95,31 +83,11 @@ st.markdown("""
     }
     </style>
     """, unsafe_allow_html=True)
-    </style>
-    """, unsafe_allow_html=True)
 
-/* ツールチップ（吹き出し）自体のデザインを紺色に変更 */
-    div[data-baseweb="tooltip"] {
-        background-color: #050a14 !important; /* 深い紺色 */
-        border: 1px solid #00f2ff !important; /* 水色の枠線 */
-        border-radius: 8px !important;
-    }
-
-    /* ツールチップ内の文字色を水色に */
-    div[data-baseweb="tooltip"] * {
-        color: #00f2ff !important;
-        background-color: transparent !important;
-    }
-
-    /* 吹き出しの「矢印」部分も紺色に */
-    div[data-baseweb="tooltip"] div {
-        background-color: transparent !important;
-    }
-
-# 1. ページタイトル（マウスオーバーで「龍王理論」と表示）
+# 3. Layout Title
 st.markdown('<h1 class="main-title" title="龍王理論：資産運用ターミナル">DRAGON KING THEORY</h1>', unsafe_allow_html=True)
 
-# --- サイドバー構成 ---
+# 4. Sidebar Elements
 with st.sidebar:
     st.markdown('<h2 title="監視銘柄の入力">🔍 SCAN TARGETS</h2>', unsafe_allow_html=True)
     ticker_input = st.text_input("SCAN TICKERS", value="XRP-USD, 7203.T, 3140.T, AAPL", help="分析したい銘柄コードをカンマ区切りで入力。日本株は末尾に .T").upper()
@@ -141,12 +109,7 @@ with st.sidebar:
         st.session_state.rows += 1
         st.rerun()
 
-    st.divider()
-    st.markdown('<h2 title="アラート設定">🔔 ALERTS</h2>', unsafe_allow_html=True)
-    alert_ticker = st.selectbox("TARGET TICKET", tickers, help="アラート対象銘柄を選択")
-    target_price = st.number_input("TARGET PRICE", value=0.0, help="この価格以下で通知発動")
-
-# --- 関数定義 ---
+# 5. Functions
 def get_live_pf(data_list):
     res = []
     t_cost, t_val = 0, 0
@@ -163,7 +126,7 @@ def get_live_pf(data_list):
         except: continue
     return pd.DataFrame(res), t_cost, t_val
 
-# --- 2. ポートフォリオ合計エリア ---
+# 6. Main Dashboard
 st.markdown('<div class="portfolio-card">', unsafe_allow_html=True)
 st.markdown("<h3 title='艦隊評価額の合計' style='color:#00f2ff; text-align:center;'>🌌 TOTAL ASSET VALUE</h3>", unsafe_allow_html=True)
 
@@ -181,20 +144,18 @@ else:
     st.markdown('<p style="color:#00f2ff; text-align:center; border:1px dashed #00f2ff; padding:20px;" title="サイドバーでデータを入力してください">⚠️ SYSTEM IDLE: PLEASE ENTER FLEET DATA.</p>', unsafe_allow_html=True)
 st.markdown('</div>', unsafe_allow_html=True)
 
-# --- 3. 個別分析セクション ---
+# 7. Analysis Section
 for t_code in tickers:
     try:
         with st.expander(f"🛰️ SCANNING: {t_code}", expanded=True):
             stock = yf.Ticker(t_code)
             df = stock.history(start="2025-08-01")
-            
-            # 配当
             info = stock.info
             div_yield = info.get('dividendYield', 0)
             div_text = f"{div_yield * 100:.2f}%" if div_yield else "N/A"
-
-            # 指標
             last_p = float(df['Close'].iloc[-1])
+            
+            # Indicators
             delta = df['Close'].diff(); gain = (delta.where(delta > 0, 0)).rolling(14).mean(); loss = (-delta.where(delta < 0, 0)).rolling(14).mean()
             rsi = 100 - (100 / (1 + (gain / loss))).iloc[-1]
 
@@ -206,7 +167,6 @@ for t_code in tickers:
             tc, m, w, a, b, c, c1, c2, O, D = model.fit(max_searches=20)
             crit_date = pd.Timestamp.fromordinal(int(tc)).strftime('%Y-%m-%d')
 
-            # メトリクス（help引数で翻訳表示）
             ca, cb, cc = st.columns(3)
             ca.metric("PRICE", f"{last_p:,.2f}", help="現在の市場価格")
             cb.metric("DIV YIELD", div_text, help="予想配当利回り")
@@ -216,6 +176,3 @@ for t_code in tickers:
             fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', height=220, margin=dict(l=0,r=0,t=0,b=0), font_color="#00f2ff", xaxis=dict(showgrid=False), yaxis=dict(showgrid=True, gridcolor='#112244'))
             st.plotly_chart(fig, use_container_width=True)
     except: continue
-
-
-
