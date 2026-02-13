@@ -8,28 +8,44 @@ import plotly.express as px
 
 st.set_page_config(page_title="Ultimate Dragon Portfolio", layout="wide")
 
-# --- スタイル設定 ---
+# --- スタイル設定（デザイン強化版） ---
 st.markdown("""
     <style>
-    .stMetric { background-color: #1e2130; padding: 15px; border-radius: 10px; border: 1px solid #3e445e; }
+    /* 全体の背景となじむメトリクス設定 */
+    .stMetric { 
+        background-color: #0e1117; 
+        padding: 15px; 
+        border-radius: 10px; 
+        border: 1px solid #30363d; 
+    }
+    
+    /* 1. ポートフォリオ合計枠の特別な塗りつぶし */
+    .portfolio-card { 
+        background-color: #1a237e; /* 濃いロイヤルブルーで塗りつぶし */
+        padding: 25px; 
+        border-radius: 15px; 
+        border: 2px solid #00d1ff; /* 水色の光る枠線 */
+        margin-bottom: 25px;
+        box-shadow: 0 4px 15px rgba(0, 209, 255, 0.2); /* ほのかな光彩 */
+    }
+
+    /* 2. 総資産の数字を「白」に近い水色で光らせる */
+    [data-testid="stMetricValue"] {
+        color: #00f2ff !important; 
+        font-size: 2.2rem !important;
+        font-weight: 800 !important;
+        text-shadow: 0 0 10px rgba(0, 242, 255, 0.5);
+    }
+    
+    /* 3. ラベル（文字）も白くして読みやすく */
+    [data-testid="stMetricLabel"] {
+        color: #ffffff !important;
+        font-size: 1.1rem !important;
+    }
+
+    /* 買い場・売り場シグナルのスタイル（維持） */
     .buy-zone { background-color: #008000; color: #ffffff; font-weight: bold; border: 2px solid #00ff00; padding: 20px; border-radius: 10px; }
     .sell-zone { background-color: #b30000; color: #ffffff; font-weight: bold; border: 2px solid #ff4b4b; padding: 20px; border-radius: 10px; }
-    .portfolio-card { background-color: #11141c; padding: 20px; border-radius: 15px; border-left: 5px solid #00d1ff; margin-bottom: 20px; }
-    </style>
-    """, unsafe_allow_html=True)
-
-st.title("🐉 究極・ドラゴン資産司令塔")
-st.markdown("""
-    <style>
-    /* 既存のスタイル... */
-    .stMetric { background-color: #1e2130; padding: 15px; border-radius: 10px; border: 1px solid #3e445e; }
-    
-    /* 総資産の数字を強調 */
-    [data-testid="stMetricValue"] {
-        color: #00d1ff; /* 鮮やかな水色 */
-        font-size: 1.8rem !important;
-        font-weight: bold;
-    }
     </style>
     """, unsafe_allow_html=True)
 # --- サイドバー：ポートフォリオ設定 ---
@@ -133,5 +149,6 @@ for ticker in tickers:
             st.plotly_chart(fig, use_container_width=True)
     except:
         st.error(f"{ticker} の分析に失敗しました。")
+
 
 
