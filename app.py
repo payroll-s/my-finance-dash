@@ -8,12 +8,30 @@ from datetime import datetime
 
 st.set_page_config(page_title="Ultimate Dragon Hunter", layout="wide")
 
-# スタイル設定（CSSで少し豪華に）
+# スタイル設定（文字を白く太く、枠をハッキリと）
 st.markdown("""
     <style>
     .stMetric { background-color: #1e2130; padding: 15px; border-radius: 10px; border: 1px solid #3e445e; }
-    .buy-zone { background-color: #004d00; border: 2px solid #00ff00; padding: 20px; border-radius: 10px; }
-    .sell-zone { background-color: #4d0000; border: 2px solid #ff0000; padding: 20px; border-radius: 10px; }
+    
+    /* 買い場シグナル：濃い緑背景に「白文字」でハッキリ */
+    .buy-zone { 
+        background-color: #008000; 
+        color: #ffffff; 
+        font-weight: bold;
+        border: 2px solid #00ff00; 
+        padding: 20px; 
+        border-radius: 10px; 
+    }
+    
+    /* 警戒ゾーン：濃い赤背景に「白文字」でハッキリ */
+    .sell-zone { 
+        background-color: #b30000; 
+        color: #ffffff; 
+        font-weight: bold;
+        border: 2px solid #ff4b4b; 
+        padding: 20px; 
+        border-radius: 10px; 
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -90,3 +108,4 @@ for ticker in tickers:
 
     except Exception as e:
         st.error(f"エラー分析 ({ticker}): {e}")
+
