@@ -9,10 +9,10 @@ import plotly.express as px
 # ページ基本設定
 st.set_page_config(page_title="Dragon King Theory", layout="wide")
 
-# --- サイバー・スタイル（翻訳アイコン修復版） ---
+# --- CYBER BLUE STYLE (FIXED TOOLTIP) ---
 st.markdown("""
     <style>
-    /* 全テキストをシアン（水色）に統一 */
+    /* 1. Global Text Cyan */
     html, body, [class*="css"], .stMarkdown, p, span, label, li {
         color: #00f2ff !important;
         font-family: 'Courier New', monospace;
@@ -22,29 +22,31 @@ st.markdown("""
         background-image: radial-gradient(circle at 50% 50%, #112244 0%, #050a14 100%);
     }
     
-    /* ヘルプアイコン（？）の色と視認性を修復 */
-    [data-testid="stMarker"] {
+    /* 2. Tooltip Custom (Navy Background) */
+    div[data-baseweb="tooltip"] {
+        background-color: #050a14 !important;
+        border: 1px solid #00f2ff !important;
+        border-radius: 8px !important;
+    }
+    div[data-baseweb="tooltip"] * {
         color: #00f2ff !important;
-        opacity: 1 !important;
+        background-color: transparent !important;
     }
     div[data-testid="stTooltipHoverTarget"] svg {
         fill: #00f2ff !important;
     }
 
-    /* サイドバー・スタイル */
+    /* 3. Cards & Expander */
     [data-testid="stSidebar"] {
         background-color: rgba(5, 10, 20, 0.95) !important;
         border-right: 1px solid #00f2ff;
     }
-
-    /* 各種カード・エクスパンダー */
     .stMetric, .portfolio-card, .stExpander {
         background-color: rgba(16, 20, 35, 0.8) !important;
         border: 1px solid #00f2ff !important;
         border-radius: 10px !important;
         box-shadow: 0 0 15px rgba(0, 242, 255, 0.3);
     }
-    
     .portfolio-card {
         border: 2px solid #00f2ff !important;
         box-shadow: 0 0 20px rgba(0, 242, 255, 0.4);
@@ -52,7 +54,7 @@ st.markdown("""
         margin-bottom: 30px;
     }
 
-    /* タイトル：DRAGON KING THEORY */
+    /* 4. Main Title */
     .main-title {
         color: #00f2ff !important;
         text-transform: uppercase;
@@ -72,12 +74,12 @@ st.markdown("""
         font-weight: 800 !important;
     }
 
+    /* 5. Inputs & Buttons */
     input, textarea, select, .stTextInput div, .stNumberInput div {
         background-color: #050a14 !important;
         color: #00f2ff !important;
         border-color: #00f2ff !important;
     }
-
     .stButton>button {
         width: 100%;
         background: transparent !important;
@@ -210,4 +212,5 @@ for t_code in tickers:
             fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', height=220, margin=dict(l=0,r=0,t=0,b=0), font_color="#00f2ff", xaxis=dict(showgrid=False), yaxis=dict(showgrid=True, gridcolor='#112244'))
             st.plotly_chart(fig, use_container_width=True)
     except: continue
+
 
