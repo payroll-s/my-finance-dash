@@ -92,6 +92,24 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
+/* ツールチップ（吹き出し）自体のデザインを紺色に変更 */
+    div[data-baseweb="tooltip"] {
+        background-color: #050a14 !important; /* 深い紺色 */
+        border: 1px solid #00f2ff !important; /* 水色の枠線 */
+        border-radius: 8px !important;
+    }
+
+    /* ツールチップ内の文字色を水色に */
+    div[data-baseweb="tooltip"] * {
+        color: #00f2ff !important;
+        background-color: transparent !important;
+    }
+
+    /* 吹き出しの「矢印」部分も紺色に */
+    div[data-baseweb="tooltip"] div {
+        background-color: transparent !important;
+    }
+
 # 1. ページタイトル（マウスオーバーで「龍王理論」と表示）
 st.markdown('<h1 class="main-title" title="龍王理論：資産運用ターミナル">DRAGON KING THEORY</h1>', unsafe_allow_html=True)
 
@@ -192,3 +210,4 @@ for t_code in tickers:
             fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', height=220, margin=dict(l=0,r=0,t=0,b=0), font_color="#00f2ff", xaxis=dict(showgrid=False), yaxis=dict(showgrid=True, gridcolor='#112244'))
             st.plotly_chart(fig, use_container_width=True)
     except: continue
+
