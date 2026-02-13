@@ -123,8 +123,9 @@ if not pf_df.empty:
     c3.plotly_chart(fig_pie, use_container_width=True)
 st.markdown('</div>', unsafe_allow_html=True)
 
-# --- 2. 銘柄分析セクション（これまでの機能） ---
+# --- 2. 銘柄分析セクション ---
 st.divider()
+
 def calculate_rsi(data, window=14):
     delta = data.diff()
     gain = (delta.where(delta > 0, 0)).rolling(window=window).mean()
@@ -132,16 +133,17 @@ def calculate_rsi(data, window=14):
     rs = gain / loss
     return 100 - (100 / (1 + rs))
 
-for ticker in tickers:
-    # (以前の分析ロジックとグラフ表示 - スペースの都合上同様のコードをここに維持)
+for t_code in tickers: # 変数名を明確に t_code とします
     try:
-        with st.expander(f"📉 {ticker} の詳細診断", expanded=True):
-            df = yf.download(ticker, start="2025-08-01", progress=False)
+        with st.expander(f"📉 {t_code} の詳細診断", expanded=True):
+            df = yf.download(t_code, start="2025-08-01", progress=False)
             if isinstance(df.columns, pd.MultiIndex): df.columns = df.columns.get_level_values(0)
+            
             df['RSI'] = calculate_rsi(df['Close'])
             latest = df.iloc[-1]
+            curr_val = float(latest['Close']) # 現在の価格
             
-            # LPPLS (簡易化して表示)
+            # --- LPPLS計算 ---
             df_clean = df[['Close']].dropna().reset_index()
             time = [pd.Timestamp.toordinal(d) for d in df_clean['Date']]
             price = np.log(df_clean['Close'].values.flatten())
@@ -149,18 +151,23 @@ for ticker in tickers:
             tc, m, w, a, b, c, c1, c2, O, D = lppls_model.fit(max_searches=30)
             critical_date = pd.Timestamp.fromordinal(int(tc)).strftime('%Y-%m-%d')
 
-            # 判定と表示
+            # --- ★アラート判定ロジック★ ---
+            if alert_ticker == t_code and target_price > 0:
+                if curr_val <= target_price:
+                    st.balloons() # 風船を飛ばす
+                    st.toast(f"🚨 ターゲット到達！ {t_code}: {curr_val:.2f}", icon="🔥")
+                    st.warning(f"🔔 アラート発動：{t_code} が目標の {target_price} 以下になりました！")
+
+            # 判定と表示 (RSI)
             if latest['RSI'] < 30: st.markdown(f'<div class="buy-zone">🚀 絶好の買い場！ (RSI: {latest["RSI"]:.1f}%)</div>', unsafe_allow_html=True)
             elif latest['RSI'] > 70: st.markdown(f'<div class="sell-zone">⚠️ 警戒ゾーン！ (RSI: {latest["RSI"]:.1f}%)</div>', unsafe_allow_html=True)
             else: st.info(f"📋 観察フェーズです。")
             
+            st.metric("現在値", f"{curr_val:.2f}")
             st.metric("臨界点 (X-Day)", critical_date)
+            
             fig = go.Figure(data=[go.Scatter(x=df.index, y=df['Close'], name="Price")])
             fig.update_layout(height=300, template="plotly_dark")
             st.plotly_chart(fig, use_container_width=True)
-    except:
-        st.error(f"{ticker} の分析に失敗しました。")
-
-
-
-
+    except Exception as e:
+        st.error(f"{t_code} の分析中にエラーが発生しました: {e}")
