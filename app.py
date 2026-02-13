@@ -12,7 +12,9 @@ st.set_page_config(page_title="Dragon King Theory", layout="wide")
 # --- CYBER BLUE STYLE (FIXED TOOLTIP) ---
 st.markdown("""
     <style>
-    /* 1. Global Text Cyan */
+st.markdown("""
+    <style>
+    /* 1. Global Color */
     html, body, [class*="css"], .stMarkdown, p, span, label, li {
         color: #00f2ff !important;
         font-family: 'Courier New', monospace;
@@ -22,11 +24,12 @@ st.markdown("""
         background-image: radial-gradient(circle at 50% 50%, #112244 0%, #050a14 100%);
     }
     
-    /* 2. Tooltip Custom (Navy Background) */
+    /* 2. Tooltip (Navy Background & Cyan Border) */
     div[data-baseweb="tooltip"] {
         background-color: #050a14 !important;
         border: 1px solid #00f2ff !important;
         border-radius: 8px !important;
+        box-shadow: 0 0 10px rgba(0, 242, 255, 0.5) !important;
     }
     div[data-baseweb="tooltip"] * {
         color: #00f2ff !important;
@@ -36,7 +39,7 @@ st.markdown("""
         fill: #00f2ff !important;
     }
 
-    /* 3. Cards & Expander */
+    /* 3. Layout Elements */
     [data-testid="stSidebar"] {
         background-color: rgba(5, 10, 20, 0.95) !important;
         border-right: 1px solid #00f2ff;
@@ -54,7 +57,7 @@ st.markdown("""
         margin-bottom: 30px;
     }
 
-    /* 4. Main Title */
+    /* 4. Text & Metrics */
     .main-title {
         color: #00f2ff !important;
         text-transform: uppercase;
@@ -66,7 +69,6 @@ st.markdown("""
         margin-bottom: 40px;
         cursor: help;
     }
-
     [data-testid="stMetricValue"] {
         color: #00f2ff !important;
         text-shadow: 0 0 15px #00f2ff;
@@ -91,6 +93,8 @@ st.markdown("""
         color: #050a14 !important;
         box-shadow: 0 0 20px #00f2ff;
     }
+    </style>
+    """, unsafe_allow_html=True)
     </style>
     """, unsafe_allow_html=True)
 
@@ -212,5 +216,6 @@ for t_code in tickers:
             fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', height=220, margin=dict(l=0,r=0,t=0,b=0), font_color="#00f2ff", xaxis=dict(showgrid=False), yaxis=dict(showgrid=True, gridcolor='#112244'))
             st.plotly_chart(fig, use_container_width=True)
     except: continue
+
 
 
