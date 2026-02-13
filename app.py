@@ -6,93 +6,157 @@ from lppls import lppls
 import plotly.graph_objects as go
 import plotly.express as px
 
-st.set_page_config(page_title="Ultimate Dragon Portfolio", layout="wide")
+# ページ設定
+st.set_page_config(page_title="Dragon Cyber Terminal", layout="wide")
 
-# --- スタイル設定 ---
+# --- サイバー・スタイル（宇宙・ネオン） ---
 st.markdown("""
     <style>
-    .stMetric { background-color: #0e1117; padding: 15px; border-radius: 10px; border: 1px solid #30363d; }
-    .portfolio-card { 
-        background-color: #1a237e; 
-        padding: 25px; 
-        border-radius: 15px; 
-        border: 2px solid #00d1ff; 
-        margin-bottom: 25px;
-        box-shadow: 0 4px 15px rgba(0, 209, 255, 0.2);
+    /* 全体の背景：宇宙の深い闇 */
+    .stApp {
+        background-color: #050a14;
+        background-image: radial-gradient(circle at 50% 50%, #112244 0%, #050a14 100%);
     }
-    [data-testid="stMetricValue"] { color: #00f2ff !important; font-size: 2.2rem !important; font-weight: 800 !important; }
-    [data-testid="stMetricLabel"] { color: #ffffff !important; }
-    .buy-zone { background-color: #008000; color: #ffffff; font-weight: bold; border: 2px solid #00ff00; padding: 20px; border-radius: 10px; }
-    .sell-zone { background-color: #b30000; color: #ffffff; font-weight: bold; border: 2px solid #ff4b4b; padding: 20px; border-radius: 10px; }
+    
+    /* サイバーなカードデザイン */
+    .stMetric, .portfolio-card, .stExpander {
+        background-color: rgba(16, 20, 35, 0.8) !important;
+        border: 1px solid #00f2ff !important;
+        border-radius: 10px !important;
+        box-shadow: 0 0 15px rgba(0, 242, 255, 0.2);
+    }
+
+    /* ポートフォリオ合計：ネオン・マゼンタ */
+    .portfolio-card {
+        border: 2px solid #ff00ff !important;
+        box-shadow: 0 0 20px rgba(255, 0, 255, 0.3);
+        padding: 30px;
+        margin-bottom: 30px;
+    }
+
+    /* メトリクスの光る文字 */
+    [data-testid="stMetricValue"] {
+        color: #00f2ff !important;
+        font-family: 'Courier New', monospace;
+        text-shadow: 0 0 10px #00f2ff;
+        font-size: 2.5rem !important;
+    }
+
+    /* タイトル：サイバーフォント風 */
+    h1 {
+        color: #00f2ff;
+        text-align: center;
+        text-transform: uppercase;
+        letter-spacing: 5px;
+        text-shadow: 2px 2px 10px #00f2ff;
+    }
+
+    /* ボタンと入力欄のカスタマイズ */
+    .stButton>button {
+        background: linear-gradient(45deg, #ff00ff, #00f2ff);
+        color: white;
+        border: none;
+        font-weight: bold;
+    }
+    
+    .buy-zone { background-color: rgba(0, 255, 0, 0.1); border: 2px solid #00ff00; color: #00ff00; padding: 15px; border-radius: 10px; font-weight: bold; text-align: center; }
+    .sell-zone { background-color: rgba(255, 0, 0, 0.1); border: 2px solid #ff4b4b; color: #ff4b4b; padding: 15px; border-radius: 10px; font-weight: bold; text-align: center; }
     </style>
     """, unsafe_allow_html=True)
 
-st.title("🐉 究極・ドラゴン資産司令塔")
+st.title("🛰️ Dragon Cyber Terminal v3.0")
 
-# --- サイドバー設定 ---
-st.sidebar.header("💰 ポートフォリオ設定")
-portfolio_input = st.sidebar.text_area("保有データ (銘柄,単価,数)", value="XRP-USD,0.5,1000\n7203.T,2500,100", height=100)
+# --- サイドバー：ポートフォリオ入力（銘柄ごと） ---
+st.sidebar.header("🛸 艦隊データ（ポートフォリオ）")
 
-st.sidebar.header("🔍 分析ターゲット")
-ticker_input = st.sidebar.text_input("分析銘柄 (カンマ区切り)", value="XRP-USD, 7203.T, AAPL").upper()
-tickers = [t.strip() for t in ticker_input.split(",")]
+# 銘柄ごとの入力フォーム
+if 'rows' not in st.session_state:
+    st.session_state.rows = 3  # 初期入力枠の数
+
+with st.sidebar:
+    pf_data_list = []
+    for i in range(st.session_state.rows):
+        st.markdown(f"**Unit {i+1}**")
+        col1, col2, col3 = st.columns([2, 2, 2])
+        tick = col1.text_input("銘柄", value="XRP-USD" if i==0 else "", key=f"t_{i}")
+        price = col2.number_input("単価", value=0.0, key=f"p_{i}")
+        qty = col3.number_input("数量", value=0.0, key=f"q_{i}")
+        if tick:
+            pf_data_list.append({"銘柄": tick.upper(), "単価": price, "数量": qty})
+    
+    if st.button("🛰️ 入力枠を増やす"):
+        st.session_state.rows += 1
+        st.rerun()
 
 st.sidebar.divider()
-st.sidebar.header("🔔 価格アラート")
-alert_ticker = st.sidebar.selectbox("対象を選択", tickers)
-target_price = st.sidebar.number_input("この価格以下で通知", value=0.0)
+st.sidebar.header("🔍 スキャン対象")
+ticker_input = st.sidebar.text_input("分析銘柄", value="XRP-USD, 7203.T, 3140.T, AAPL").upper()
+tickers = [t.strip() for t in ticker_input.split(",")]
 
-# --- 関数定義 ---
-def calculate_rsi(data, window=14):
-    delta = data.diff()
-    gain = (delta.where(delta > 0, 0)).rolling(window=window).mean()
-    loss = (-delta.where(delta < 0, 0)).rolling(window=window).mean()
-    rs = gain / loss
-    return 100 - (100 / (1 + rs))
+# アラート設定
+alert_ticker = st.sidebar.selectbox("アラート対象", tickers)
+target_price = st.sidebar.number_input("通知価格（以下）", value=0.0)
 
-def get_pf_data(raw_input):
-    data = []
+# --- 関数 ---
+def get_live_pf(data_list):
+    res = []
     t_cost, t_val = 0, 0
-    for line in raw_input.strip().split('\n'):
+    for item in data_list:
         try:
-            t, p, q = [x.strip() for x in line.split(',')]
-            curr_df = yf.download(t, period="1d", progress=False)
-            curr_p = float(curr_df['Close'].iloc[-1])
-            val, cost = curr_p * float(q), float(p) * float(q)
-            data.append({"銘柄": t, "評価額": val, "損益": val - cost})
+            t, p, q = item["銘柄"], item["単価"], item["数量"]
+            if q <= 0: continue
+            df = yf.download(t, period="1d", progress=False)
+            curr_p = float(df['Close'].iloc[-1])
+            val, cost = curr_p * q, p * q
+            res.append({"銘柄": t, "評価額": val, "損益": val - cost})
             t_cost += cost
             t_val += val
         except: continue
-    return pd.DataFrame(data), t_cost, t_val
+    return pd.DataFrame(res), t_cost, t_val
 
-# --- メイン表示：ポートフォリオ ---
+# --- メイン：サイバー・ダッシュボード ---
 st.markdown('<div class="portfolio-card">', unsafe_allow_html=True)
-pf_df, t_cost, t_val = get_pf_data(portfolio_input)
+st.markdown("<h3 style='color:#ff00ff; text-align:center;'>🌌 TOTAL ASSET VALUE</h3>", unsafe_allow_html=True)
+
+pf_df, total_cost, total_value = get_live_pf(pf_data_list)
+
 if not pf_df.empty:
-    c1, c2, c3 = st.columns([1,1,1.5])
-    c1.metric("総資産額", f"¥{t_val:,.0f}" if "T" in ticker_input else f"${t_val:,.2f}")
-    c2.metric("合計損益", f"{(t_val-t_cost):,.2f}", delta=f"{((t_val-t_cost)/t_cost*100):.2f}%")
-    fig_pie = px.pie(pf_df, values='評価額', names='銘柄', hole=.4, template="plotly_dark")
-    fig_pie.update_layout(margin=dict(t=0,b=0,l=0,r=0), height=150, showlegend=False)
+    p_profit = total_value - total_cost
+    p_ratio = (p_profit / total_cost * 100) if total_cost > 0 else 0
+    
+    c1, c2, c3 = st.columns([1.5, 1.5, 2])
+    c1.metric("CURRENT TOTAL", f"¥{total_value:,.0f}" if "T" in ticker_input else f"${total_value:,.2f}")
+    c2.metric("TOTAL P/L", f"{p_profit:,.2f}", delta=f"{p_ratio:.2f}%")
+    
+    fig_pie = px.pie(pf_df, values='評価額', names='銘柄', hole=.6)
+    fig_pie.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', 
+                          font_color="#fff", height=200, showlegend=False)
+    fig_pie.update_traces(marker=dict(colors=['#ff00ff', '#00f2ff', '#7000ff', '#00ff88']))
     c3.plotly_chart(fig_pie, use_container_width=True)
+else:
+    st.write("左側のサイドバーでポートフォリオを入力してください。")
 st.markdown('</div>', unsafe_allow_html=True)
 
-# --- メイン表示：個別銘柄分析 ---
+# --- 個別分析 ---
 for t_code in tickers:
     try:
-        with st.expander(f"📉 {t_code} の詳細診断", expanded=True):
+        with st.expander(f"🛰️ SCANNING: {t_code}", expanded=True):
             df = yf.download(t_code, start="2025-08-01", progress=False)
             if isinstance(df.columns, pd.MultiIndex): df.columns = df.columns.get_level_values(0)
-            df['RSI'] = calculate_rsi(df['Close'])
-            latest_p = float(df['Close'].iloc[-1])
+            
+            # RSI計算
+            delta = df['Close'].diff()
+            gain = (delta.where(delta > 0, 0)).rolling(14).mean()
+            loss = (-delta.where(delta < 0, 0)).rolling(14).mean()
+            rsi = 100 - (100 / (1 + (gain / loss)))
+            last_p = float(df['Close'].iloc[-1])
 
-            # ★アラート判定
-            if alert_ticker == t_code and target_price > 0 and latest_p <= target_price:
+            # アラート判定
+            if alert_ticker == t_code and target_price > 0 and last_p <= target_price:
                 st.balloons()
-                st.toast(f"🚨 到達！ {t_code}: {latest_p:.2f}", icon="🔥")
-                st.warning(f"🔔 アラート：{t_code} が目標の {target_price} を下回りました！")
+                st.warning(f"⚠️ TARGET REACHED: {t_code} @ {last_p:.2f}")
 
-            # LPPLS
+            # LPPLS (臨界点)
             df_c = df[['Close']].dropna().reset_index()
             time = [pd.Timestamp.toordinal(d) for d in df_c['Date']]
             price = np.log(df_c['Close'].values.flatten())
@@ -101,15 +165,16 @@ for t_code in tickers:
             crit_date = pd.Timestamp.fromordinal(int(tc)).strftime('%Y-%m-%d')
 
             # 表示
-            rsi_val = latest_p # ダミーではなく実際値を表示
-            if df['RSI'].iloc[-1] < 30: st.markdown(f'<div class="buy-zone">🚀 絶好の買い場！ (RSI: {df["RSI"].iloc[-1]:.1f}%)</div>', unsafe_allow_html=True)
-            elif df['RSI'].iloc[-1] > 70: st.markdown(f'<div class="sell-zone">⚠️ 警戒ゾーン！ (RSI: {df["RSI"].iloc[-1]:.1f}%)</div>', unsafe_allow_html=True)
-            
-            mc1, mc2 = st.columns(2)
-            mc1.metric("現在値", f"{latest_p:.2f}")
-            mc2.metric("臨界点 (X-Day)", crit_date)
-            
-            fig = go.Figure(data=[go.Scatter(x=df.index, y=df['Close'], line=dict(color='#00d1ff'))])
-            fig.update_layout(height=250, template="plotly_dark", margin=dict(l=0,r=0,t=0,b=0))
+            if rsi.iloc[-1] < 30: st.markdown('<div class="buy-zone">🚀 BUY SIGNAL: DRAGON AWAKENING</div>', unsafe_allow_html=True)
+            elif rsi.iloc[-1] > 70: st.markdown('<div class="sell-zone">⚠️ SELL SIGNAL: OVERHEATED</div>', unsafe_allow_html=True)
+
+            colA, colB = st.columns(2)
+            colA.metric("PRICE", f"{last_p:,.2f}")
+            colB.metric("X-DAY (LPPLS)", crit_date)
+
+            fig = go.Figure(data=[go.Scatter(x=df.index, y=df['Close'], line=dict(color='#00f2ff', width=2))])
+            fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', 
+                              height=200, margin=dict(l=0,r=0,t=0,b=0), font_color="#00f2ff",
+                              xaxis=dict(showgrid=False), yaxis=dict(showgrid=True, gridcolor='#112244'))
             st.plotly_chart(fig, use_container_width=True)
-    except Exception as e: st.error(f"Error {t_code}: {e}")
+    except: continue
