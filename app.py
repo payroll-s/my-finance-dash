@@ -19,7 +19,19 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 st.title("🐉 究極・ドラゴン資産司令塔")
-
+st.markdown("""
+    <style>
+    /* 既存のスタイル... */
+    .stMetric { background-color: #1e2130; padding: 15px; border-radius: 10px; border: 1px solid #3e445e; }
+    
+    /* 総資産の数字を強調 */
+    [data-testid="stMetricValue"] {
+        color: #00d1ff; /* 鮮やかな水色 */
+        font-size: 1.8rem !important;
+        font-weight: bold;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 # --- サイドバー：ポートフォリオ設定 ---
 st.sidebar.header("💰 自分のポートフォリオ設定")
 st.sidebar.info("例: 銘柄,平均取得単価,保有数")
@@ -121,4 +133,5 @@ for ticker in tickers:
             st.plotly_chart(fig, use_container_width=True)
     except:
         st.error(f"{ticker} の分析に失敗しました。")
+
 
