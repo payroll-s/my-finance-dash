@@ -59,7 +59,18 @@ portfolio_input = st.sidebar.text_area("カンマ区切りで入力 (銘柄,単�
 st.sidebar.header("🔍 銘柄分析ターゲット")
 ticker_input = st.sidebar.text_input("分析したい銘柄（カンマ区切り）", value="XRP-USD, 7203.T, AAPL").upper()
 tickers = [t.strip() for t in ticker_input.split(",")]
+# --- サイドバーに通知設定を追加 ---
+st.sidebar.divider()
+st.sidebar.header("🔔 価格アラート設定")
+alert_ticker = st.sidebar.selectbox("アラート対象", tickers)
+target_price = st.sidebar.number_input("ターゲット価格（以下になったら通知）", value=0.0)
 
+# --- 通知のメインロジック（分析ループの中などに追加） ---
+if alert_ticker == ticker and target_price > 0:
+    if latest['Close'] <= target_price:
+        st.balloons() # 画面に風船を飛ばす演出
+        st.toast(f"🔔 アラート：{ticker} が目標価格 {target_price} を下回りました！", icon="🔥")
+        st.warning(f"🚨 【発動】{ticker} 現在値 {latest['Close']:.2f} が目標価格に到達！")
 # --- データ取得・ポートフォリオ計算（修正版） ---
 def get_portfolio_data(raw_input):
     lines = raw_input.strip().split('\n')
@@ -149,6 +160,7 @@ for ticker in tickers:
             st.plotly_chart(fig, use_container_width=True)
     except:
         st.error(f"{ticker} の分析に失敗しました。")
+
 
 
 
