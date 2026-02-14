@@ -100,11 +100,54 @@ with st.sidebar:
     # 基準となる入力欄
     ticker_input = st.text_input("しらべる 銘柄コード:", value="XRP-USD").upper()
     
+   # --- サイドバー：呪文ボタン部分の書き換え ---
     st.write("▼ おぼえている じゅもん")
-    # 入力欄と全く同じ「黒い石板」のボタン
+    
+    # 呪文選択用のスタイル（ここだけで完結するようにインラインで指定）
+    st.markdown("""
+        <style>
+        .spell-window {
+            border: 4px solid #ffffff;
+            background-color: #000000;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+        .spell-item {
+            color: #ffffff !important;
+            font-family: 'DotGothic16', sans-serif;
+            font-size: 1.2rem;
+            padding: 8px 15px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            display: block;
+            text-decoration: none;
+        }
+        .spell-item:hover {
+            background-color: #ffffff !important;
+            color: #000000 !important;
+        }
+        .spell-item::before {
+            content: "・";
+            margin-right: 8px;
+        }
+        .spell-item:hover::before {
+            content: "▶";
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
+    # 1つの白枠（spell-window）の中に4つの選択肢を配置
+    st.markdown('<div class="spell-window">', unsafe_allow_html=True)
+    
+    # Streamlitのボタンを使わず、radioや独自の仕組みで選択を受け取る
+    # ここでは一番シンプルに、標準の st.button を「文字だけのリンク風」にCSSで強制上書きして枠内に入れます
     for i, spell in enumerate(st.session_state.spells):
-        if st.button(spell["name"], key=f"btn_{i}", help=f"{spell['desc']} ({spell['ticker']})"):
+        # ボタンの標準装飾を消し、枠内のリストアイテムとして振る舞わせる
+        if st.button(spell["name"], key=f"spell_opt_{i}", help=f"{spell['desc']} ({spell['ticker']})"):
             ticker_input = spell["ticker"]
+
+    st.markdown('</div>', unsafe_allow_html=True)
+    # --- 書き換えここまで ---
 
     st.divider()
     with st.expander("じゅもんを 書き換える"):
