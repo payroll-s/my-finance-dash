@@ -8,13 +8,13 @@ import plotly.graph_objects as go
 # --- ページ設定 ---
 st.set_page_config(page_title="Dragon King's Lair", layout="wide")
 
-# --- ドラクエ風：ダンジョン・スタイル（最終調整版） ---
+# --- ドラクエ風：ダンジョン・スタイル（ボタン視認性修正版） ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=DotGothic16&display=swap');
 
-    /* 1. 全体の背景 */
-    .stApp, [data-testid="stSidebar"] {
+    /* 1. 全体の背景と基本フォント */
+    .stApp, [data-testid="stSidebar"], [data-testid="stSidebarNav"] {
         background-color: #000000 !important;
         font-family: 'DotGothic16', sans-serif !important;
     }
@@ -30,10 +30,10 @@ st.markdown("""
         border-right: 4px solid #ffffff !important;
     }
 
-    /* 4. 入力欄（しらべる欄）の白枠化 */
+    /* 4. 入力欄（しらべる欄）の白枠化 - 強調版 */
     div[data-baseweb="input"] {
         background-color: #000000 !important;
-        border: 4px solid #ffffff !important; /* 聖なる白枠 */
+        border: 4px solid #ffffff !important;
         border-radius: 0px !important;
     }
     input {
@@ -42,45 +42,25 @@ st.markdown("""
         font-family: 'DotGothic16', sans-serif !important;
     }
 
-    /* 5. じゅもん欄（ボタン周り）の背景を完全に黒にする */
-    [data-testid="stVerticalBlock"] > div {
-        background-color: transparent !important;
-    }
-    
-    /* 6. エクスパンダー（じゅもん書き換え）の装飾 */
-    .stExpander {
-        background-color: #000000 !important;
-        border: 2px solid #ffffff !important;
-        border-radius: 0px !important;
-    }
-
-    /* 7. メトリクス（ステータス） */
-    .stMetric {
-        background-color: #000000 !important;
-        border: 4px solid #ffffff !important;
-        border-radius: 0px !important;
-    }
-    [data-testid="stMetricValue"] {
-        color: #ffff00 !important;
-        font-size: 2.5rem !important;
-        text-shadow: 2px 2px #ff0000;
-    }
-
-    /* 8. じゅもんボタン */
+    /* 5. じゅもんボタン：通常時とホバー時の色を厳格に指定 */
     .stButton>button {
         width: 100%;
-        background-color: #000000 !important;
-        color: #ffffff !important;
+        background-color: #000000 !important; /* 通常時は黒 */
+        color: #ffffff !important;           /* 通常時は白 */
         border: 2px solid #ffffff !important;
         border-radius: 0px !important;
         text-align: left;
+        font-family: 'DotGothic16', sans-serif !important;
+        display: block;
     }
+    
     .stButton>button:hover {
-        background-color: #ffffff !important;
-        color: #000000 !important;
+        background-color: #ffffff !important; /* カーソルを合わせたら白 */
+        color: #000000 !important;           /* カーソルを合わせたら黒 */
+        border: 2px solid #ffffff !important;
     }
 
-    /* 9. ツールチップ（黒背景・白文字・白枠） */
+    /* 6. ツールチップ（ポップアップ） */
     div[data-baseweb="tooltip"] {
         background-color: #000000 !important;
         border: 2px solid #ffffff !important;
@@ -91,11 +71,17 @@ st.markdown("""
         background-color: #000000 !important;
     }
 
-    /* 10. メッセージウィンドウ */
-    .report-card {
+    /* 7. メトリクスとレポートウィンドウ */
+    .report-card, .stMetric {
         background-color: #000000 !important;
         border: 4px solid #ffffff !important;
+        border-radius: 0px !important;
         padding: 20px;
+    }
+    [data-testid="stMetricValue"] {
+        color: #ffff00 !important;
+        font-size: 2.5rem !important;
+        text-shadow: 2px 2px #ff0000;
     }
 
     h1, h2, h3 {
@@ -121,11 +107,11 @@ if 'spells' not in st.session_state:
 with st.sidebar:
     st.markdown("<h3>[ コマンド ]</h3>", unsafe_allow_html=True)
     
-    # 銘柄コード入力（白枠・黒背景）
+    # 銘柄コード入力（白枠）
     ticker_input = st.text_input("しらべる 銘柄コード:", value="XRP-USD").upper()
     
     st.write("▼ おぼえている じゅもん")
-    # じゅもんボタン
+    # じゅもんボタン（通常時：黒背景・白文字 / ホバー時：白背景・黒文字）
     for i, spell in enumerate(st.session_state.spells):
         if st.button(spell["name"], key=f"btn_{i}", help=f"{spell['desc']} ({spell['ticker']})"):
             ticker_input = spell["ticker"]
