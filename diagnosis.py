@@ -8,7 +8,7 @@ import plotly.graph_objects as go
 # --- ページ設定 ---
 st.set_page_config(page_title="Dragon King's Lair", layout="wide")
 
-# --- CSS：反転エフェクトの追加 ---
+# --- CSS：サイドバーの視認性と新コマンド枠の装飾 ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=DotGothic16&display=swap');
@@ -29,97 +29,80 @@ st.markdown("""
         border-right: 5px solid #ffffff !important;
     }
 
-    /* 3. サイドバーテキスト */
-    [data-testid="stSidebar"] h3, [data-testid="stSidebar"] .stMarkdown p {
+    /* 3. サイドバー内のテキスト（白・影付き） */
+    [data-testid="stSidebar"] h3, [data-testid="stSidebar"] p, [data-testid="stSidebar"] span {
         color: #ffffff !important;
         text-shadow: 2px 2px 0px #000000 !important;
     }
 
-    /* 4. コマンドウィンドウ（白枠・黒背景） */
-    .command-window {
+    /* 4. ★ 新・銘柄名表示コマンド枠 ★ */
+    .name-window {
         background-color: #000000 !important;
         border: 4px solid #ffffff !important;
-        padding: 10px !important;
-        margin: 10px 0px !important;
-    }
-
-    /* ボタン（通常時）：黒背景・白文字 */
-    .command-window .stButton > button {
-        background-color: #000000 !important;
+        padding: 20px !important;
+        margin-top: 15px !important;
         color: #ffffff !important;
-        border: none !important;
+        font-size: 1.5rem !important;
+        text-align: center !important;
+        min-height: 80px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* 5. 入力欄：白枠・黒背景 */
+    div[data-baseweb="input"] {
+        background-color: #000000 !important;
+        border: 4px solid #ffffff !important;
         border-radius: 0px !important;
-        text-align: left !important;
-        width: 100% !important;
-        font-family: 'DotGothic16', sans-serif !important;
-        font-size: 1.2rem !important;
-        padding: 8px 10px !important;
-        display: block !important;
-        transition: none !important; /* RPG風にパッと切り替える */
     }
-
-    /* ★ ホバー時（反転）：白背景・黒文字 ★ */
-    .command-window .stButton > button:hover {
-        background-color: #ffffff !important;
-        color: #000000 !important;
-        border: none !important;
-    }
-    
-    /* Streamlit特有のホバー時の枠線を消す */
-    .command-window .stButton > button:focus {
-        background-color: #ffffff !important;
-        color: #000000 !important;
-        box-shadow: none !important;
-    }
-
-    /* 5. 入力欄・メトリクス・レポート（前回同様） */
-    div[data-baseweb="input"] { background-color: #000000 !important; border: 4px solid #ffffff !important; }
     input { color: #ffffff !important; background-color: #000000 !important; }
-    [data-testid="stMetric"] { background-color: #000000 !important; border: 4px solid #ffffff !important; }
-    [data-testid="stMetricValue"] { color: #ffff00 !important; text-shadow: 2px 2px #ff0000; }
-    .report-card { background-color: #000000 !important; border: 4px solid #ffffff !important; padding: 20px !important; color: #ffffff !important; }
+
+    /* 6. メイン画面：ステータス（メトリクス） */
+    [data-testid="stMetric"] {
+        background-color: #000000 !important;
+        border: 4px solid #ffffff !important;
+        padding: 15px !important;
+    }
+    [data-testid="stMetricLabel"] { color: #ffffff !important; }
+    [data-testid="stMetricValue"] { color: #ffff00 !important; text-shadow: 2px 2px #ff0000; font-size: 2.2rem !important; }
+
+    /* 7. レポートカード */
+    .report-card {
+        background-color: #000000 !important;
+        border: 4px solid #ffffff !important;
+        padding: 20px !important;
+        margin: 20px 0 !important;
+        color: #ffffff !important;
+    }
     h1, h2, h3 { color: #ffffff !important; border-bottom: 2px solid #ffffff; }
     </style>
     """, unsafe_allow_html=True)
 
 st.markdown('<h1>▶ DRAGON KING\'S LAIR</h1>', unsafe_allow_html=True)
 
-# --- データ管理 ---
-if 'spells' not in st.session_state:
-    st.session_state.spells = [
-        {"name": "りゅうお", "ticker": "XRP-USD"},
-        {"name": "おうごん", "ticker": "GC=F"},
-        {"name": "くるま", "ticker": "7203.T"},
-        {"name": "ぶつりゅう", "ticker": "3140.T"}
-    ]
-if 'current_ticker' not in st.session_state:
-    st.session_state.current_ticker = "XRP-USD"
-
-# --- サイドバー：コマンド ---
+# --- サイドバー：入力と銘柄名表示 ---
 with st.sidebar:
     st.markdown("<h3>[ コマンド ]</h3>", unsafe_allow_html=True)
     
-    ticker_input = st.text_input("しらべる 銘柄コード:", value=st.session_state.current_ticker, key="ticker_input_field").upper()
-    
-    st.write("▼ おぼえている じゅもん")
-    
-    # 漆黒のコマンドウィンドウ
-    st.markdown('<div class="command-window">', unsafe_allow_html=True)
-    for i, spell in enumerate(st.session_state.spells):
-        cursor = "▶ " if st.session_state.current_ticker == spell["ticker"] else "　 "
-        # ボタン自体に反転CSSが効くようになっています
-        if st.button(f"{cursor}{spell['name']}", key=f"spell_cmd_{i}"):
-            st.session_state.current_ticker = spell["ticker"]
-            st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
+    # 銘柄手入力欄
+    ticker_input = st.text_input("しらべる 銘柄コード:", value="XRP-USD").upper()
+    ticker = ticker_input.strip()
 
-    st.divider()
-    with st.expander("じゅもんを 書き換える"):
-        for i in range(len(st.session_state.spells)):
-            st.session_state.spells[i]["name"] = st.text_input(f"なまえ {i+1}", value=st.session_state.spells[i]["name"], key=f"edit_name_{i}")
-            st.session_state.spells[i]["ticker"] = st.text_input(f"コード {i+1}", value=st.session_state.spells[i]["ticker"], key=f"edit_ticker_{i}").upper()
+    # 銘柄情報の取得
+    @st.cache_data(ttl=3600)
+    def get_stock_name(symbol):
+        try:
+            info = yf.Ticker(symbol).info
+            return info.get('longName') or info.get('shortName') or symbol
+        except:
+            return "？？？？"
 
-    ticker = st.session_state.current_ticker.strip()
+    stock_name = get_stock_name(ticker) if ticker else "なし"
+
+    st.write("▼ いまの あいて")
+    # ★ 銘柄名を表示する新コマンド枠 ★
+    st.markdown(f'<div class="name-window">▶ {stock_name}</div>', unsafe_allow_html=True)
 
 # --- 診断ロジック ---
 @st.cache_data(ttl=3600)
@@ -144,18 +127,23 @@ if ticker:
         df['MA25'] = df['Close'].rolling(window=25).mean()
         df['Divergence'] = ((df['Close'] - df['MA25']) / df['MA25']) * 100
 
-        # メイン表示
+        # メイン画面：ステータス表示
         st.markdown(f"<h3>{ticker} の ステータス</h3>", unsafe_allow_html=True)
         col1, col2, col3 = st.columns(3)
         col1.metric("かかく (G)", f"{df['Close'].iloc[-1]:,.2f}")
         col2.metric("きりょく (RSI)", f"{df['RSI'].iloc[-1]:.1f}")
         col3.metric("かいり (DIV)", f"{df['Divergence'].iloc[-1]:.1f}")
 
+        # レポート表示
         st.markdown('<div class="report-card">', unsafe_allow_html=True)
-        st.write(f"▼ {ticker} を しらべた！")
-        st.write("てきの ようすを うかがっている…")
+        st.write(f"▼ {stock_name} を しらべた！")
+        rsi_val = df['RSI'].iloc[-1]
+        if rsi_val > 70: st.write("・てきは こうふんしている！")
+        elif rsi_val < 30: st.write("・てきは つかれている！")
+        st.write("・てきの ようすを うかがっている…")
         st.markdown('</div>', unsafe_allow_html=True)
 
+        # チャート表示
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=df.index, y=df['Close'], line=dict(color='#ffffff', width=3)))
         fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(family="DotGothic16", color="#ffffff"))
