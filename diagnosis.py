@@ -8,18 +8,15 @@ import plotly.graph_objects as go
 # --- ページ設定 ---
 st.set_page_config(page_title="Dragon King's Lair", layout="wide")
 
-# --- CSS：レンガの壁に漆黒のボタンを配置 ---
+# --- CSS：レンガ壁に「絶対に白くならない」黒い窓を設置 ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=DotGothic16&display=swap');
 
-    /* 1. メイン画面の背景（漆黒） */
-    .stApp {
-        background-color: #000000 !important;
-        font-family: 'DotGothic16', sans-serif !important;
-    }
+    /* 1. メイン背景 */
+    .stApp { background-color: #000000 !important; font-family: 'DotGothic16', sans-serif !important; }
 
-    /* 2. サイドバーを「RPG風レンガ」に変更 */
+    /* 2. レンガ造りのサイドバー */
     [data-testid="stSidebar"] {
         background-color: #4a2c2a !important; 
         background-image: 
@@ -32,13 +29,13 @@ st.markdown("""
         border-right: 5px solid #ffffff !important;
     }
 
-    /* サイドバー内のテキスト（影付き） */
+    /* 3. テキストの視認性向上 */
     [data-testid="stSidebar"] .stMarkdown, [data-testid="stSidebar"] p, [data-testid="stSidebar"] label {
         color: #ffffff !important;
         text-shadow: 2px 2px 0px #000000;
     }
 
-    /* 3. 【統一】入力欄：白枠・黒背景 */
+    /* 4. 入力欄（マスターデザイン） */
     div[data-baseweb="input"] {
         background-color: #000000 !important;
         border: 4px solid #ffffff !important;
@@ -46,51 +43,40 @@ st.markdown("""
     }
     input { color: #ffffff !important; background-color: #000000 !important; }
 
-    /* 4. 【統一】呪文ボタン：入力欄と同じ「黒背景・白文字・白枠」に強制固定 */
-    /* サイドバー内のボタンをピンポイントで指定 */
-    section[data-testid="stSidebar"] .stButton > button {
-        background-color: #000000 !important; /* 背景：漆黒 */
-        color: #ffffff !important;           /* 文字：白 */
-        border: 4px solid #ffffff !important; /* 枠：太い白 */
-        border-radius: 0px !important;       /* 角：四角 */
+    /* 5. ★ 呪文ボタンの最終物理改造 ★ */
+    /* 全てのボタンのデフォルトスタイルを完全に破壊して上書き */
+    div.stButton > button {
+        background-color: #000000 !important; /* 絶対に黒 */
+        color: #ffffff !important;           /* 絶対に白 */
+        border: 4px solid #ffffff !important; /* 絶対に太い白枠 */
+        border-radius: 0px !important;
         width: 100% !important;
-        text-align: left !important;
+        height: 50px !important;              /* 高さを出して入力欄に寄せる */
         font-family: 'DotGothic16', sans-serif !important;
-        padding: 10px !important;
-        box-shadow: 4px 4px 0px #000000 !important; /* 黒い影 */
-        opacity: 1 !important;
+        font-size: 1.2rem !important;
+        font-weight: bold !important;
+        text-align: center !important;
+        margin-top: 10px !important;
+        box-shadow: 6px 6px 0px #000000 !important; /* 強い影で立体化 */
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
     }
 
-    /* ホバー時：反転（白背景・黒文字） */
-    section[data-testid="stSidebar"] .stButton > button:hover {
+    /* ホバー時だけ反転させる */
+    div.stButton > button:hover {
         background-color: #ffffff !important;
         color: #000000 !important;
         border: 4px solid #ffffff !important;
     }
 
-    /* クリック後やフォーカス時も黒背景を維持 */
-    section[data-testid="stSidebar"] .stButton > button:focus, 
-    section[data-testid="stSidebar"] .stButton > button:active {
-        background-color: #000000 !important;
-        color: #ffffff !important;
-        box-shadow: none !important;
+    /* ボタンの中の余計なレイヤーを非表示にする */
+    div.stButton > button div {
+        color: inherit !important;
     }
 
-    /* 5. ツールチップ（ポップアップ）も黒白で統一 */
-    div[data-baseweb="tooltip"] {
-        background-color: #000000 !important;
-        border: 2px solid #ffffff !important;
-    }
-    div[data-baseweb="tooltip"] * {
-        color: #ffffff !important;
-        background-color: #000000 !important;
-    }
-
-    /* 6. メイン画面の装飾 */
-    .report-card, .stMetric {
-        background-color: #000000 !important;
-        border: 4px solid #ffffff !important;
-    }
+    /* 6. その他装飾 */
+    .report-card, .stMetric { background-color: #000000 !important; border: 4px solid #ffffff !important; }
     [data-testid="stMetricValue"] { color: #ffff00 !important; text-shadow: 2px 2px #ff0000; }
     h1, h2, h3 { color: #ffffff !important; border-bottom: 2px solid #ffffff; }
     </style>
@@ -107,15 +93,15 @@ if 'spells' not in st.session_state:
         {"name": "ぶつりゅう", "ticker": "3140.T", "desc": "エーアイティー"}
     ]
 
-# --- サイドバー：ダンジョン壁面 ---
+# --- サイドバー ---
 with st.sidebar:
     st.markdown("<h3>[ コマンド ]</h3>", unsafe_allow_html=True)
     
-    # 銘柄入力
+    # 基準となる入力欄
     ticker_input = st.text_input("しらべる 銘柄コード:", value="XRP-USD").upper()
     
     st.write("▼ おぼえている じゅもん")
-    # ここに表示されるボタンを「漆黒の石板」にしました
+    # 入力欄と全く同じ「黒い石板」のボタン
     for i, spell in enumerate(st.session_state.spells):
         if st.button(spell["name"], key=f"btn_{i}", help=f"{spell['desc']} ({spell['ticker']})"):
             ticker_input = spell["ticker"]
@@ -183,7 +169,6 @@ if ticker:
             st.markdown(f'- <span style="color:#00ff00">あらしは すぎさった。 いまは しずかだ。</span>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
-        # チャート
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=df.index, y=df['Close'], name="かかく", line=dict(color='#ffffff', width=3)))
         fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(family="DotGothic16", color="#ffffff"),
