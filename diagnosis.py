@@ -13,44 +13,37 @@ st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=DotGothic16&display=swap');
 
-    /* 全体の背景：暗い石壁のイメージ */
     .stApp {
         background-color: #000000;
-        background-image: 
-            radial-gradient(circle at 2px 2px, #1a1a1a 1px, transparent 0);
+        background-image: radial-gradient(circle at 2px 2px, #1a1a1a 1px, transparent 0);
         background-size: 40px 40px;
         font-family: 'DotGothic16', sans-serif !important;
     }
 
-    /* テキスト：基本は白（メッセージウィンドウ） */
     html, body, [class*="css"], .stMarkdown, p, span, label, li {
         color: #ffffff !important;
         font-family: 'DotGothic16', sans-serif !important;
     }
 
-    /* サイドバー：コマンドウィンドウ */
     [data-testid="stSidebar"] {
         background-color: #000000 !important;
         border-right: 4px solid #ffffff !important;
     }
 
-    /* メッセージウィンドウ風の枠線 */
     .report-card, .stMetric, .stExpander {
         background-color: #000000 !important;
         border: 4px solid #ffffff !important;
         border-radius: 0px !important;
-        box-shadow: inset 0 0 0 2px #000000, 0 0 0 2px #000000;
         padding: 20px;
     }
 
-    /* メトリクス（ステータス画面風） */
     [data-testid="stMetricValue"] {
-        color: #ffff00 !important; /* ゴールド */
+        color: #ffff00 !important;
         font-size: 2.5rem !important;
         text-shadow: 2px 2px #ff0000;
     }
 
-    /* ボタン：コマンド選択 */
+    /* じゅもんボタンの装飾 */
     .stButton>button {
         width: 100%;
         background-color: #000000 !important;
@@ -58,24 +51,23 @@ st.markdown("""
         border: 2px solid #ffffff !important;
         border-radius: 0px !important;
         text-align: left;
+        font-family: 'DotGothic16', sans-serif !important;
     }
     .stButton>button:hover {
         background-color: #ffffff !important;
         color: #000000 !important;
     }
-    .stButton>button::before {
-        content: "▶ ";
+
+    .status-ok { color: #00ff00 !important; }
+    .status-warn { color: #ff0000 !important; }
+
+    /* ツールチップ（紺色） */
+    div[data-baseweb="tooltip"] {
+        background-color: #050a14 !important;
+        border: 1px solid #00f2ff !important;
     }
-
-    /* 判定の色 */
-    .status-ok { color: #00ff00 !important; } /* 回復・成功 */
-    .status-warn { color: #ff0000 !important; blink 1s infinite; } /* 痛恨の一撃・警告 */
-    .status-info { color: #ffffff !important; }
-
-    @keyframes blink {
-        0% { opacity: 1; }
-        50% { opacity: 0; }
-        100% { opacity: 1; }
+    div[data-baseweb="tooltip"] * {
+        color: #00f2ff !important;
     }
 
     h1, h2, h3 {
@@ -87,26 +79,45 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- タイトル表示 ---
-st.markdown('<h1>▶ DRAGON KING\'S LAIR (竜王の城)</h1>', unsafe_allow_html=True)
+st.markdown('<h1>▶ DRAGON KING\'S LAIR</h1>', unsafe_allow_html=True)
+
+# --- じゅもんデータの管理 (Session State) ---
+if 'spells' not in st.session_state:
+    st.session_state.spells = [
+        {"name": "りゅうお", "ticker": "XRP-USD", "desc": "リップル(XRP)"},
+        {"name": "おうごん", "ticker": "GC=F", "desc": "金(GOLD)先物"},
+        {"name": "くるま", "ticker": "7203.T", "desc": "トヨタ自動車"},
+        {"name": "ぶつりゅう", "ticker": "3140.T", "desc": "エーアイティー"}
+    ]
 
 # --- サイドバー：コマンドウィンドウ ---
 with st.sidebar:
     st.markdown("<h3>[ コマンド ]</h3>", unsafe_allow_html=True)
     
+    # メイン入力
     ticker_input = st.text_input("しらべる 銘柄コード:", value="XRP-USD").upper()
     
     st.divider()
-    st.write("▼ おなじみの じゅもん")
-    c1, c2 = st.columns(2)
-    if c1.button("りゅうお"): ticker_input = "XRP-USD"
-    if c2.button("おうごん"): ticker_input = "GC=F"
-    if c1.button("くるま"): ticker_input = "7203.T"
-    if c2.button("ぶつりゅう"): ticker_input = "3140.T"
+    st.write("▼ おぼえている じゅもん")
     
+    # じゅもんボタンの生成
+    for i, spell in enumerate(st.session_state.spells):
+        if st.button(spell["name"], key=f"btn_{i}", help=f"銘柄: {spell['desc']} ({spell['ticker']})"):
+            ticker_input = spell["ticker"]
+
+    st.divider()
+    
+    # じゅもん編集エクスパンダー
+    with st.expander("じゅもんを 書き換える"):
+        for i in range(len(st.session_state.spells)):
+            st.write(f"--- じゅもん {i+1} ---")
+            st.session_state.spells[i]["name"] = st.text_input("なまえ", value=st.session_state.spells[i]["name"], key=f"name_{i}")
+            st.session_state.spells[i]["ticker"] = st.text_input("コード", value=st.session_state.spells[i]["ticker"], key=f"tick_{i}").upper()
+            st.session_state.spells[i]["desc"] = st.text_input("かいせつ", value=st.session_state.spells[i]["desc"], key=f"desc_{i}")
+
     ticker = ticker_input.strip()
 
-# --- データロード ---
+# --- データ取得 & 診断 (ロジック部分は継承) ---
 @st.cache_data(ttl=3600)
 def load_data(symbol):
     try:
@@ -154,29 +165,20 @@ if ticker:
         st.write(f"▼ {ticker} を しらべた！")
         
         today_str = pd.Timestamp.now().strftime('%Y-%m-%d')
-        
-        # 判定
-        if curr_rsi > 70: st.markdown('- <span class="status-warn">てきは こうふんしている！ (RSI過熱)</span>', unsafe_allow_html=True)
-        elif curr_rsi < 30: st.markdown('- <span class="status-ok">てきは つかれている！ チャンスだ！ (RSI売られすぎ)</span>', unsafe_allow_html=True)
-        
-        if abs(curr_div) > 15: st.markdown('- <span class="status-warn">じゅもんが ぼうそうしている！ (25日線乖離)</span>', unsafe_allow_html=True)
-        
+        if curr_rsi > 70: st.markdown('- <span class="status-warn">てきは こうふんしている！</span>', unsafe_allow_html=True)
+        elif curr_rsi < 30: st.markdown('- <span class="status-ok">てきは つかれている！ チャンスだ！</span>', unsafe_allow_html=True)
+        if abs(curr_div) > 15: st.markdown('- <span class="status-warn">じゅもんが ぼうそうしている！</span>', unsafe_allow_html=True)
         if critical_date > today_str:
             st.markdown(f'- <span class="status-warn">おそろしい よかんがする… くるべきときは {critical_date}！</span>', unsafe_allow_html=True)
         else:
             st.markdown(f'- <span class="status-ok">あらしは すぎさった。 いまは しずかだ。</span>', unsafe_allow_html=True)
-            
         st.markdown('</div>', unsafe_allow_html=True)
 
-        # 水晶玉（チャート）
+        # チャート
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=df.index, y=df['Close'], name="かかく", line=dict(color='#ffffff', width=3)))
-        fig.update_layout(
-            paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-            font=dict(family="DotGothic16", color="#ffffff"),
-            xaxis=dict(showgrid=False), yaxis=dict(showgrid=True, gridcolor='#333333')
-        )
+        fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(family="DotGothic16", color="#ffffff"),
+            xaxis=dict(showgrid=False), yaxis=dict(showgrid=True, gridcolor='#333333'))
         st.plotly_chart(fig, use_container_width=True)
-
     else:
-        st.write("▼ お返事がない。 ただの しかばね の ようだ。 (データが見つかりません)")
+        st.write("▼ お返事がない。 ただの しかばね の ようだ。")
