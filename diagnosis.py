@@ -100,42 +100,60 @@ with st.sidebar:
     # 基準となる入力欄
     ticker_input = st.text_input("しらべる 銘柄コード:", value="XRP-USD").upper()
     
-   # --- サイドバー：呪文ボタン部分の書き換え ---
+# --- サイドバー：呪文メニュー部分 ---
     st.write("▼ おぼえている じゅもん")
     
-    # 呪文選択用のスタイル（ここだけで完結するようにインラインで指定）
+    # 1. ポップアップの設定は一切触れず、このメニュー内だけの限定スタイルを適用
     st.markdown("""
         <style>
-        .spell-window {
-            border: 4px solid #ffffff;
-            background-color: #000000;
-            padding: 10px;
-            margin-bottom: 20px;
+        /* 4つのボタンを包む白い枠 */
+        .spell-container {
+            border: 4px solid #ffffff !important;
+            background-color: #000000 !important;
+            padding: 5px !important;
+            margin-bottom: 20px !important;
+            display: flex;
+            flex-direction: column;
         }
-        .spell-item {
+
+        /* 枠の中のボタン（入力欄と同じ仕様に強制上書き） */
+        .spell-container .stButton > button {
+            background-color: #000000 !important;
             color: #ffffff !important;
-            font-family: 'DotGothic16', sans-serif;
-            font-size: 1.2rem;
-            padding: 8px 15px;
-            cursor: pointer;
-            border: 1px solid transparent;
-            display: block;
-            text-decoration: none;
+            border: none !important; /* 外枠があるので内側の枠は消す */
+            border-radius: 0px !important;
+            width: 100% !important;
+            text-align: left !important;
+            font-family: 'DotGothic16', sans-serif !important;
+            font-size: 1.1rem !important;
+            padding: 8px 10px !important;
+            margin: 0 !important;
+            line-height: 1.5 !important;
         }
-        .spell-item:hover {
+
+        /* ホバー時のみ反転 */
+        .spell-container .stButton > button:hover {
             background-color: #ffffff !important;
             color: #000000 !important;
         }
-        .spell-item::before {
-            content: "・";
-            margin-right: 8px;
-        }
-        .spell-item:hover::before {
-            content: "▶";
+
+        /* 選択中の青い影などを完全に消去 */
+        .spell-container .stButton > button:focus {
+            box-shadow: none !important;
+            color: #ffffff !important;
+            background-color: #000000 !important;
         }
         </style>
     """, unsafe_allow_html=True)
 
+    # 2. 1つの大きな白枠（Container）の中にボタンを配置
+    st.markdown('<div class="spell-container">', unsafe_allow_html=True)
+    for i, spell in enumerate(st.session_state.spells):
+        # 標準の st.button を使うが、上のCSSで「枠内のリスト」に変貌させる
+        if st.button(f"・{spell['name']}", key=f"spell_opt_{i}", help=f"{spell['desc']} ({spell['ticker']})"):
+            ticker_input = spell["ticker"]
+    st.markdown('</div>', unsafe_allow_html=True)
+    # --- 修正ここまで ---
     # 1つの白枠（spell-window）の中に4つの選択肢を配置
     st.markdown('<div class="spell-window">', unsafe_allow_html=True)
     
