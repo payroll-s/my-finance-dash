@@ -8,7 +8,7 @@ import plotly.graph_objects as go
 # --- ページ設定 ---
 st.set_page_config(page_title="Dragon King's Lair", layout="wide")
 
-# --- ドラクエ風：ダンジョン・スタイル（ボタン背景問題を根絶） ---
+# --- ドラクエ風：ダンジョン・スタイル（ツールチップ＆ボタン完全固定版） ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=DotGothic16&display=swap');
@@ -39,12 +39,10 @@ st.markdown("""
     input {
         color: #ffffff !important;
         background-color: #000000 !important;
-        font-family: 'DotGothic16', sans-serif !important;
     }
 
-    /* 5. 呪文ボタン：徹底的な色固定 */
-    /* 通常時（フォーカス中も含む） */
-    .stButton > button {
+    /* 5. 呪文ボタン：通常・ホバーの切り替えを厳格化 */
+    div.stButton > button {
         background-color: #000000 !important;
         color: #ffffff !important;
         border: 2px solid #ffffff !important;
@@ -52,20 +50,26 @@ st.markdown("""
         width: 100%;
         text-align: left;
         font-family: 'DotGothic16', sans-serif !important;
-        padding: 10px !important;
     }
 
-    /* マウスホバー時・クリック中 */
-    .stButton > button:hover, .stButton > button:active, .stButton > button:focus {
+    div.stButton > button:hover {
         background-color: #ffffff !important;
         color: #000000 !important;
-        border: 2px solid #ffffff !important;
     }
 
-    /* 6. エクスパンダー内も黒に */
-    .stExpander {
+    /* 6. ★ ツールチップ（ポップアップ）の完全固定 ★ */
+    /* 背景と文字色を強制指定 */
+    div[data-baseweb="tooltip"] {
         background-color: #000000 !important;
         border: 2px solid #ffffff !important;
+    }
+    
+    /* ツールチップ内のすべてのテキストを白に */
+    div[data-baseweb="tooltip"] div, 
+    div[data-baseweb="tooltip"] p, 
+    div[data-baseweb="tooltip"] span {
+        color: #ffffff !important;
+        background-color: #000000 !important;
     }
 
     /* 7. メトリクス */
@@ -107,12 +111,12 @@ if 'spells' not in st.session_state:
 with st.sidebar:
     st.markdown("<h3>[ コマンド ]</h3>", unsafe_allow_html=True)
     
-    # 銘柄入力
+    # 銘柄入力（白枠）
     ticker_input = st.text_input("しらべる 銘柄コード:", value="XRP-USD").upper()
     
     st.write("▼ おぼえている じゅもん")
     for i, spell in enumerate(st.session_state.spells):
-        # ボタンを配置
+        # ボタンを配置。ヘルプに解説を入れる。
         if st.button(spell["name"], key=f"btn_{i}", help=f"{spell['desc']} ({spell['ticker']})"):
             ticker_input = spell["ticker"]
 
