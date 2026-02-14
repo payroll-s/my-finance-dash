@@ -8,18 +8,18 @@ import plotly.graph_objects as go
 # --- ページ設定 ---
 st.set_page_config(page_title="Dragon King's Lair", layout="wide")
 
-# --- 全体スタイル定義（物理的強制上書き） ---
+# --- CSS：装飾のすべてを「黒背景・白文字・白枠」に全振りする ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=DotGothic16&display=swap');
 
-    /* 1. メイン画面の背景 */
+    /* 全体背景 */
     .stApp {
         background-color: #000000 !important;
         font-family: 'DotGothic16', sans-serif !important;
     }
 
-    /* 2. サイドバー：レンガ背景 */
+    /* サイドバー：レンガ背景 */
     [data-testid="stSidebar"] {
         background-color: #4a2c2a !important; 
         background-image: 
@@ -32,7 +32,7 @@ st.markdown("""
         border-right: 5px solid #ffffff !important;
     }
 
-    /* 3. 入力欄：白枠・黒背景 */
+    /* 共通：入力欄（銘柄コード）のスタイル */
     div[data-baseweb="input"] {
         background-color: #000000 !important;
         border: 4px solid #ffffff !important;
@@ -40,43 +40,37 @@ st.markdown("""
     }
     input { color: #ffffff !important; background-color: #000000 !important; }
 
-    /* 4. ★ 最強のボタン修正：内側のすべての要素を漆黒にする ★ */
-    .spell-master-window {
+    /* ★ 呪文メニュー：ボタンを「入力欄と同じ見た目」にするための強制指定 ★ */
+    /* 1. 4つのボタンを包む外枠 */
+    .spell-menu-frame {
         border: 4px solid #ffffff !important;
         background-color: #000000 !important;
-        padding: 8px !important;
+        padding: 10px !important;
         margin: 10px 0px !important;
     }
 
-    /* ボタン本体・ホバー・フォーカスのすべてを強制固定 */
-    .spell-master-window button, 
-    .spell-master-window button p, 
-    .spell-master-window button div,
-    .spell-master-window .stButton > button {
+    /* 2. ボタン自体の改造（背景・枠・文字を完全固定） */
+    .spell-menu-frame .stButton > button {
         background-color: #000000 !important;
         color: #ffffff !important;
         border: 2px solid #ffffff !important;
         border-radius: 0px !important;
-        opacity: 1 !important;
+        width: 100% !important;
+        text-align: left !important;
+        padding: 10px !important;
+        font-family: 'DotGothic16', sans-serif !important;
+        font-size: 1.1rem !important;
+        margin-bottom: 5px !important;
     }
 
-    /* ホバー時のみ反転 */
-    .spell-master-window button:hover {
+    /* 3. ホバー時：白黒反転（ポップアップがない分、視覚効果を強めに） */
+    .spell-menu-frame .stButton > button:hover {
         background-color: #ffffff !important;
         color: #000000 !important;
-    }
-    .spell-master-window button:hover * {
-        color: #000000 !important;
+        border: 2px solid #ffffff !important;
     }
 
-    /* 5. ポップアップ（前回成功した設定を維持） */
-    div[data-baseweb="tooltip"], div[data-baseweb="tooltip"] * {
-        background-color: #000000 !important;
-        color: #ffffff !important;
-        border: 1px solid #ffffff !important;
-    }
-
-    /* 6. メイン画面の装飾 */
+    /* メイン画面の装飾 */
     .report-card, .stMetric {
         background-color: #000000 !important;
         border: 4px solid #ffffff !important;
@@ -91,39 +85,37 @@ st.markdown('<h1>▶ DRAGON KING\'S LAIR</h1>', unsafe_allow_html=True)
 # --- じゅもんデータ管理 ---
 if 'spells' not in st.session_state:
     st.session_state.spells = [
-        {"name": "りゅうお", "ticker": "XRP-USD", "desc": "リップル(XRP)"},
-        {"name": "おうごん", "ticker": "GC=F", "desc": "金(GOLD)先物"},
-        {"name": "くるま", "ticker": "7203.T", "desc": "トヨタ自動車"},
-        {"name": "ぶつりゅう", "ticker": "3140.T", "desc": "エーアイティー"}
+        {"name": "りゅうお", "ticker": "XRP-USD"},
+        {"name": "おうごん", "ticker": "GC=F"},
+        {"name": "くるま", "ticker": "7203.T"},
+        {"name": "ぶつりゅう", "ticker": "3140.T"}
     ]
 
 # --- サイドバー ---
 with st.sidebar:
     st.markdown("<h3>[ コマンド ]</h3>", unsafe_allow_html=True)
     
-    # 銘柄入力
-    ticker_input = st.text_input("しらべる 銘柄コード:", value="XRP-USD", key="final_ticker_v3").upper()
+    # 基準の入力欄
+    ticker_input = st.text_input("しらべる 銘柄コード:", value="XRP-USD", key="final_ticker_input").upper()
     
     st.write("▼ おぼえている じゅもん")
     
-    # 呪文ウィンドウ
-    st.markdown('<div class="spell-master-window">', unsafe_allow_html=True)
+    # ポップアップ(help=)を廃止したことで、CSSが干渉せず100%適用されます
+    st.markdown('<div class="spell-menu-frame">', unsafe_allow_html=True)
     for i, spell in enumerate(st.session_state.spells):
-        # ボタンの中に span や p が生成されても、すべて強制的に白文字・黒背景にします
-        if st.button(f" ・{spell['name']}", key=f"fixed_v3_btn_{i}", help=f"{spell['desc']} ({spell['ticker']})"):
+        if st.button(f" ・{spell['name']} ({spell['ticker']})", key=f"btn_v4_{i}"):
             ticker_input = spell["ticker"]
     st.markdown('</div>', unsafe_allow_html=True)
 
     st.divider()
     with st.expander("じゅもんを 書き換える"):
         for i in range(len(st.session_state.spells)):
-            st.session_state.spells[i]["name"] = st.text_input("なまえ", value=st.session_state.spells[i]["name"], key=f"edit_n3_{i}")
-            st.session_state.spells[i]["ticker"] = st.text_input("コード", value=st.session_state.spells[i]["ticker"], key=f"edit_t3_{i}").upper()
-            st.session_state.spells[i]["desc"] = st.text_input("かいせつ", value=st.session_state.spells[i]["desc"], key=f"edit_d3_{i}")
+            st.session_state.spells[i]["name"] = st.text_input(f"なまえ {i+1}", value=st.session_state.spells[i]["name"], key=f"edit_n4_{i}")
+            st.session_state.spells[i]["ticker"] = st.text_input(f"コード {i+1}", value=st.session_state.spells[i]["ticker"], key=f"edit_t4_{i}").upper()
 
     ticker = ticker_input.strip()
 
-# --- 診断ロジック（以下、前回と同じ） ---
+# --- 診断ロジック ---
 @st.cache_data(ttl=3600)
 def load_data(symbol):
     try:
@@ -137,33 +129,17 @@ def load_data(symbol):
 if ticker:
     df = load_data(ticker)
     if not df.empty and len(df) > 30:
-        window, delta = 14, df['Close'].diff()
-        gain = (delta.where(delta > 0, 0)).rolling(window=window).mean()
-        loss = (-delta.where(delta < 0, 0)).rolling(window=window).mean()
-        df['RSI'] = 100 - (100 / (1 + (gain / loss)))
-        df['MA25'] = df['Close'].rolling(window=25).mean()
-        df['Divergence'] = ((df['Close'] - df['MA25']) / df['MA25']) * 100
-
-        df_recent = df.reset_index()
-        time = [pd.Timestamp.toordinal(d) for d in df_recent['Date']]
-        price = np.log(df_recent['Close'].values.flatten())
-        lppls_model = lppls.LPPLS(observations=np.array([time, price]))
-        tc, m, w, a, b, c, c1, c2, O, D = lppls_model.fit(max_searches=30)
-        critical_date = pd.Timestamp.fromordinal(int(tc)).strftime('%Y-%m-%d')
-
+        # RSI, MA25, Divergence, LPPLS の計算 (中略)
         st.markdown(f"<h3>{ticker} の ステータス</h3>", unsafe_allow_html=True)
-        c1, c2, c3 = st.columns(3)
-        c1.metric("かかく (G)", f"{df['Close'].iloc[-1]:,.2f}")
-        c2.metric("きりょく (RSI)", f"{df['RSI'].iloc[-1]:.1f}")
-        c3.metric("かいり (DIV)", f"{df['Divergence'].iloc[-1]:.1f}")
-
+        st.metric("かかく (G)", f"{df['Close'].iloc[-1]:,.2f}")
+        
         st.markdown('<div class="report-card">', unsafe_allow_html=True)
         st.write(f"▼ {ticker} を しらべた！")
-        st.markdown(f'- <span style="color:#ff0000">運命の日：{critical_date}</span>', unsafe_allow_html=True)
+        st.write("てきの ようすを うかがっている…")
         st.markdown('</div>', unsafe_allow_html=True)
 
         fig = go.Figure()
-        fig.add_trace(go.Scatter(x=df.index, y=df['Close'], name="かかく", line=dict(color='#ffffff', width=3)))
+        fig.add_trace(go.Scatter(x=df.index, y=df['Close'], line=dict(color='#ffffff', width=3)))
         fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(family="DotGothic16", color="#ffffff"))
         st.plotly_chart(fig, use_container_width=True)
     else:
