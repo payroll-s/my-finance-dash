@@ -8,16 +8,14 @@ import plotly.graph_objects as go
 # --- ページ設定 ---
 st.set_page_config(page_title="Dragon King's Lair", layout="wide")
 
-# --- ドラクエ風：ダンジョン・スタイル（究極の視認性調整版） ---
+# --- ドラクエ風：ダンジョン・スタイル（最終調整版） ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=DotGothic16&display=swap');
 
     /* 1. 全体の背景 */
-    .stApp {
-        background-color: #000000;
-        background-image: radial-gradient(circle at 2px 2px, #1a1a1a 1px, transparent 0);
-        background-size: 40px 40px;
+    .stApp, [data-testid="stSidebar"] {
+        background-color: #000000 !important;
         font-family: 'DotGothic16', sans-serif !important;
     }
 
@@ -27,16 +25,15 @@ st.markdown("""
         font-family: 'DotGothic16', sans-serif !important;
     }
 
-    /* 3. サイドバー */
+    /* 3. サイドバーの境界線 */
     [data-testid="stSidebar"] {
-        background-color: #000000 !important;
         border-right: 4px solid #ffffff !important;
     }
-    
-    /* 4. 入力欄を白の枠にする */
+
+    /* 4. 入力欄（しらべる欄）の白枠化 */
     div[data-baseweb="input"] {
         background-color: #000000 !important;
-        border: 2px solid #ffffff !important;
+        border: 4px solid #ffffff !important; /* 聖なる白枠 */
         border-radius: 0px !important;
     }
     input {
@@ -45,27 +42,31 @@ st.markdown("""
         font-family: 'DotGothic16', sans-serif !important;
     }
 
-    /* 5. じゅもんセクションとカードの背景・文字色 */
-    .report-card, .stMetric, .stExpander, [data-testid="stSidebarNav"] {
+    /* 5. じゅもん欄（ボタン周り）の背景を完全に黒にする */
+    [data-testid="stVerticalBlock"] > div {
+        background-color: transparent !important;
+    }
+    
+    /* 6. エクスパンダー（じゅもん書き換え）の装飾 */
+    .stExpander {
+        background-color: #000000 !important;
+        border: 2px solid #ffffff !important;
+        border-radius: 0px !important;
+    }
+
+    /* 7. メトリクス（ステータス） */
+    .stMetric {
         background-color: #000000 !important;
         border: 4px solid #ffffff !important;
         border-radius: 0px !important;
-        padding: 20px;
     }
-    
-    /* サイドバーのセクション背景も黒に統一 */
-    section[data-testid="stSidebar"] div.stVerticalBlock > div {
-        background-color: #000000 !important;
-    }
-
-    /* 6. メトリクス */
     [data-testid="stMetricValue"] {
         color: #ffff00 !important;
         font-size: 2.5rem !important;
         text-shadow: 2px 2px #ff0000;
     }
 
-    /* 7. ボタン（じゅもん） */
+    /* 8. じゅもんボタン */
     .stButton>button {
         width: 100%;
         background-color: #000000 !important;
@@ -79,28 +80,35 @@ st.markdown("""
         color: #000000 !important;
     }
 
-    /* 8. ツールチップ（ポップアップ） */
+    /* 9. ツールチップ（黒背景・白文字・白枠） */
     div[data-baseweb="tooltip"] {
         background-color: #000000 !important;
         border: 2px solid #ffffff !important;
+        border-radius: 0px !important;
     }
     div[data-baseweb="tooltip"] * {
         color: #ffffff !important;
         background-color: #000000 !important;
     }
 
+    /* 10. メッセージウィンドウ */
+    .report-card {
+        background-color: #000000 !important;
+        border: 4px solid #ffffff !important;
+        padding: 20px;
+    }
+
     h1, h2, h3 {
         color: #ffffff !important;
         text-align: center;
         border-bottom: 2px solid #ffffff;
-        padding-bottom: 10px;
     }
     </style>
     """, unsafe_allow_html=True)
 
 st.markdown('<h1>▶ DRAGON KING\'S LAIR</h1>', unsafe_allow_html=True)
 
-# --- じゅもんデータの管理 ---
+# --- じゅもんデータ管理 ---
 if 'spells' not in st.session_state:
     st.session_state.spells = [
         {"name": "りゅうお", "ticker": "XRP-USD", "desc": "リップル(XRP)"},
@@ -113,13 +121,11 @@ if 'spells' not in st.session_state:
 with st.sidebar:
     st.markdown("<h3>[ コマンド ]</h3>", unsafe_allow_html=True)
     
-    # 入力欄（白枠）
+    # 銘柄コード入力（白枠・黒背景）
     ticker_input = st.text_input("しらべる 銘柄コード:", value="XRP-USD").upper()
     
-    st.divider()
     st.write("▼ おぼえている じゅもん")
-    
-    # 各ボタンにヘルプ（ポップアップ）を付与
+    # じゅもんボタン
     for i, spell in enumerate(st.session_state.spells):
         if st.button(spell["name"], key=f"btn_{i}", help=f"{spell['desc']} ({spell['ticker']})"):
             ticker_input = spell["ticker"]
@@ -167,7 +173,7 @@ if ticker:
         tc, m, w, a, b, c, c1, c2, O, D = lppls_model.fit(max_searches=30)
         critical_date = pd.Timestamp.fromordinal(int(tc)).strftime('%Y-%m-%d')
 
-        # ステータス表示
+        # 表示
         curr_p = df['Close'].iloc[-1]
         curr_rsi = df['RSI'].iloc[-1]
         curr_div = df['Divergence'].iloc[-1]
@@ -183,7 +189,6 @@ if ticker:
         st.write(f"▼ {ticker} を しらべた！")
         today_str = pd.Timestamp.now().strftime('%Y-%m-%d')
         
-        # 判定テキスト
         if curr_rsi > 70: st.markdown('- <span style="color:#ff0000">てきは こうふんしている！</span>', unsafe_allow_html=True)
         elif curr_rsi < 30: st.markdown('- <span style="color:#00ff00">てきは つかれている！ チャンスだ！</span>', unsafe_allow_html=True)
         if abs(curr_div) > 15: st.markdown('- <span style="color:#ff0000">じゅもんが ぼうそうしている！</span>', unsafe_allow_html=True)
