@@ -6,130 +6,177 @@ from lppls import lppls
 import plotly.graph_objects as go
 
 # --- ページ設定 ---
-st.set_page_config(page_title="Dragon King Diagnosis", layout="wide")
+st.set_page_config(page_title="Dragon King's Lair", layout="wide")
 
-# --- サイバー・スタイル（メインアプリと統一） ---
+# --- ドラクエ風：ダンジョン・スタイル ---
 st.markdown("""
     <style>
-    html, body, [class*="css"], .stMarkdown, p, span, label, li {
-        color: #00f2ff !important;
-        font-family: 'Courier New', monospace;
-    }
+    @import url('https://fonts.googleapis.com/css2?family=DotGothic16&display=swap');
+
+    /* 全体の背景：暗い石壁のイメージ */
     .stApp {
-        background-color: #050a14;
-        background-image: radial-gradient(circle at 50% 50%, #112244 0%, #050a14 100%);
+        background-color: #000000;
+        background-image: 
+            radial-gradient(circle at 2px 2px, #1a1a1a 1px, transparent 0);
+        background-size: 40px 40px;
+        font-family: 'DotGothic16', sans-serif !important;
     }
-    .report-card {
-        background-color: rgba(16, 20, 35, 0.9);
-        border: 2px solid #00f2ff;
-        border-radius: 15px;
-        padding: 25px;
-        margin-top: 20px;
-        box-shadow: 0 0 20px rgba(0, 242, 255, 0.2);
+
+    /* テキスト：基本は白（メッセージウィンドウ） */
+    html, body, [class*="css"], .stMarkdown, p, span, label, li {
+        color: #ffffff !important;
+        font-family: 'DotGothic16', sans-serif !important;
     }
-    .status-ok { color: #00ff00; font-weight: bold; text-shadow: 0 0 5px #00ff00; }
-    .status-warn { color: #ff4b4b; font-weight: bold; text-shadow: 0 0 5px #ff4b4b; }
-    .status-info { color: #00f2ff; font-weight: bold; text-shadow: 0 0 5px #00f2ff; }
-    
-    /* ツールチップ（紺色） */
-    div[data-baseweb="tooltip"] { background-color: #050a14 !important; border: 1px solid #00f2ff !important; }
-    div[data-baseweb="tooltip"] * { color: #00f2ff !important; }
+
+    /* サイドバー：コマンドウィンドウ */
+    [data-testid="stSidebar"] {
+        background-color: #000000 !important;
+        border-right: 4px solid #ffffff !important;
+    }
+
+    /* メッセージウィンドウ風の枠線 */
+    .report-card, .stMetric, .stExpander {
+        background-color: #000000 !important;
+        border: 4px solid #ffffff !important;
+        border-radius: 0px !important;
+        box-shadow: inset 0 0 0 2px #000000, 0 0 0 2px #000000;
+        padding: 20px;
+    }
+
+    /* メトリクス（ステータス画面風） */
+    [data-testid="stMetricValue"] {
+        color: #ffff00 !important; /* ゴールド */
+        font-size: 2.5rem !important;
+        text-shadow: 2px 2px #ff0000;
+    }
+
+    /* ボタン：コマンド選択 */
+    .stButton>button {
+        width: 100%;
+        background-color: #000000 !important;
+        color: #ffffff !important;
+        border: 2px solid #ffffff !important;
+        border-radius: 0px !important;
+        text-align: left;
+    }
+    .stButton>button:hover {
+        background-color: #ffffff !important;
+        color: #000000 !important;
+    }
+    .stButton>button::before {
+        content: "▶ ";
+    }
+
+    /* 判定の色 */
+    .status-ok { color: #00ff00 !important; } /* 回復・成功 */
+    .status-warn { color: #ff0000 !important; blink 1s infinite; } /* 痛恨の一撃・警告 */
+    .status-info { color: #ffffff !important; }
+
+    @keyframes blink {
+        0% { opacity: 1; }
+        50% { opacity: 0; }
+        100% { opacity: 1; }
+    }
+
+    h1, h2, h3 {
+        color: #ffffff !important;
+        text-align: center;
+        border-bottom: 2px solid #ffffff;
+        padding-bottom: 10px;
+    }
     </style>
     """, unsafe_allow_html=True)
 
-# --- タイトル ---
-st.markdown('<h1 style="text-align:center; letter-spacing:10px; text-shadow: 0 0 20px #00f2ff;">DIAGNOSIS TERMINAL</h1>', unsafe_allow_html=True)
+# --- タイトル表示 ---
+st.markdown('<h1>▶ DRAGON KING\'S LAIR (竜王の城)</h1>', unsafe_allow_html=True)
 
-# --- サイドバー：銘柄選択 ---
+# --- サイドバー：コマンドウィンドウ ---
 with st.sidebar:
-    st.header("🔍 SCAN SETTINGS")
-    # プリセットと自由入力を組み合わせ
-    preset_ticker = st.selectbox("PRESET", ["XRP-USD", "BTC-USD", "7203.T", "3140.T", "AAPL", "CUSTOM"])
+    st.markdown("<h3>[ コマンド ]</h3>", unsafe_allow_html=True)
     
-    if preset_ticker == "CUSTOM":
-        ticker = st.text_input("ENTER TICKER", value="ETH-USD").upper()
-    else:
-        ticker = preset_ticker
-
+    ticker_input = st.text_input("しらべる 銘柄コード:", value="XRP-USD").upper()
+    
     st.divider()
-    st.info("LPPLS計算には一定期間のデータが必要です。銘柄によっては解析に時間がかかる場合があります。")
+    st.write("▼ おなじみの じゅもん")
+    c1, c2 = st.columns(2)
+    if c1.button("りゅうお"): ticker_input = "XRP-USD"
+    if c2.button("おうごん"): ticker_input = "GC=F"
+    if c1.button("くるま"): ticker_input = "7203.T"
+    if c2.button("ぶつりゅう"): ticker_input = "3140.T"
+    
+    ticker = ticker_input.strip()
 
-# --- 1. データ取得 ---
+# --- データロード ---
 @st.cache_data(ttl=3600)
 def load_data(symbol):
-    data = yf.download(symbol, start="2025-08-01", progress=False)
-    if isinstance(data.columns, pd.MultiIndex):
-        data.columns = data.columns.get_level_values(0)
-    return data[['Close']].dropna()
+    try:
+        data = yf.download(symbol, start="2025-06-01", progress=False)
+        if isinstance(data.columns, pd.MultiIndex):
+            data.columns = data.columns.get_level_values(0)
+        return data[['Close']].dropna()
+    except:
+        return pd.DataFrame()
 
-try:
+if ticker:
     df = load_data(ticker)
-    if df.empty:
-        st.error(f"銘柄データが見つかりません: {ticker}")
-        st.stop()
+    
+    if not df.empty and len(df) > 30:
+        # 指標計算
+        window = 14
+        delta = df['Close'].diff()
+        gain = (delta.where(delta > 0, 0)).rolling(window=window).mean()
+        loss = (-delta.where(delta < 0, 0)).rolling(window=window).mean()
+        df['RSI'] = 100 - (100 / (1 + (gain / loss)))
+        df['MA25'] = df['Close'].rolling(window=25).mean()
+        df['Divergence'] = ((df['Close'] - df['MA25']) / df['MA25']) * 100
 
-    # --- 2. 指標計算 ---
-    # RSI
-    window = 14
-    delta = df['Close'].diff()
-    gain = (delta.where(delta > 0, 0)).rolling(window=window).mean()
-    loss = (-delta.where(delta < 0, 0)).rolling(window=window).mean()
-    df['RSI'] = 100 - (100 / (1 + (gain / loss)))
+        # LPPLS計算
+        df_recent = df.reset_index()
+        time = [pd.Timestamp.toordinal(d) for d in df_recent['Date']]
+        price = np.log(df_recent['Close'].values.flatten())
+        lppls_model = lppls.LPPLS(observations=np.array([time, price]))
+        tc, m, w, a, b, c, c1, c2, O, D = lppls_model.fit(max_searches=30)
+        critical_date = pd.Timestamp.fromordinal(int(tc)).strftime('%Y-%m-%d')
 
-    # 25日移動平均線と乖離率
-    df['MA25'] = df['Close'].rolling(window=25).mean()
-    df['Divergence'] = ((df['Close'] - df['MA25']) / df['MA25']) * 100
+        # ステータス表示
+        curr_p = df['Close'].iloc[-1]
+        curr_rsi = df['RSI'].iloc[-1]
+        curr_div = df['Divergence'].iloc[-1]
 
-    # --- 3. LPPLS計算 ---
-    df_recent = df.reset_index()
-    time = [pd.Timestamp.toordinal(d) for d in df_recent['Date']]
-    price = np.log(df_recent['Close'].values.flatten())
-    lppls_model = lppls.LPPLS(observations=np.array([time, price]))
-    tc, m, w, a, b, c, c1, c2, O, D = lppls_model.fit(max_searches=30)
-    critical_date = pd.Timestamp.fromordinal(int(tc)).strftime('%Y-%m-%d')
+        st.markdown(f"<h3>{ticker} の ステータス</h3>", unsafe_allow_html=True)
+        c1, c2, c3 = st.columns(3)
+        c1.metric("かかく (G)", f"{curr_p:,.2f}")
+        c2.metric("きりょく (RSI)", f"{curr_rsi:.1f}")
+        c3.metric("かいり (DIV)", f"{curr_div:.1f}")
 
-    # --- 4. メトリクス表示 ---
-    curr_p = df['Close'].iloc[-1]
-    curr_rsi = df['RSI'].iloc[-1]
-    curr_div = df['Divergence'].iloc[-1]
-    today_str = pd.Timestamp.now().strftime('%Y-%m-%d')
+        # メッセージウィンドウ
+        st.markdown('<div class="report-card">', unsafe_allow_html=True)
+        st.write(f"▼ {ticker} を しらべた！")
+        
+        today_str = pd.Timestamp.now().strftime('%Y-%m-%d')
+        
+        # 判定
+        if curr_rsi > 70: st.markdown('- <span class="status-warn">てきは こうふんしている！ (RSI過熱)</span>', unsafe_allow_html=True)
+        elif curr_rsi < 30: st.markdown('- <span class="status-ok">てきは つかれている！ チャンスだ！ (RSI売られすぎ)</span>', unsafe_allow_html=True)
+        
+        if abs(curr_div) > 15: st.markdown('- <span class="status-warn">じゅもんが ぼうそうしている！ (25日線乖離)</span>', unsafe_allow_html=True)
+        
+        if critical_date > today_str:
+            st.markdown(f'- <span class="status-warn">おそろしい よかんがする… くるべきときは {critical_date}！</span>', unsafe_allow_html=True)
+        else:
+            st.markdown(f'- <span class="status-ok">あらしは すぎさった。 いまは しずかだ。</span>', unsafe_allow_html=True)
+            
+        st.markdown('</div>', unsafe_allow_html=True)
 
-    c1, c2, c3 = st.columns(3)
-    c1.metric("CURRENT PRICE", f"{curr_p:,.2f}", help="現在の市場価格")
-    c2.metric("RSI (14D)", f"{curr_rsi:.1f}%", help="30以下で売られすぎ（チャンス）、70以上で過熱（警戒）")
-    c3.metric("MA25 DIV", f"{curr_div:.1f}%", help="25日移動平均線からの乖離率")
+        # 水晶玉（チャート）
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=df.index, y=df['Close'], name="かかく", line=dict(color='#ffffff', width=3)))
+        fig.update_layout(
+            paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+            font=dict(family="DotGothic16", color="#ffffff"),
+            xaxis=dict(showgrid=False), yaxis=dict(showgrid=True, gridcolor='#333333')
+        )
+        st.plotly_chart(fig, use_container_width=True)
 
-    # --- 5. 統合診断レポート ---
-    st.markdown('<div class="report-card">', unsafe_allow_html=True)
-    st.subheader(f"📑 {ticker} INTEGRATED REPORT")
-
-    diag_results = []
-    # RSI
-    if curr_rsi > 70: diag_results.append(f'<span class="status-warn">⚠️ 過熱:</span> RSIが70を超えています。短期的調整に注意。')
-    elif curr_rsi < 30: diag_results.append(f'<span class="status-ok">✅ 好機:</span> RSIが30を下回っています。絶好の仕込み場です。')
-    else: diag_results.append(f'<span class="status-info">📋 安定:</span> RSIは {curr_rsi:.1f}%。トレンドは継続または保ち合いです。')
-
-    # 乖離率
-    if abs(curr_div) > 15: diag_results.append(f'<span class="status-warn">⚠️ 乖離:</span> 平均から {curr_div:.1f}% 離脱。急激な揺り戻しを警戒。')
-    else: diag_results.append(f'<span class="status-ok">📋 健全:</span> 移動平均線に近い安定した推移です。')
-
-    # LPPLS
-    if critical_date <= today_str: diag_results.append(f'<span class="status-ok">✅ 鎮静:</span> 直近の臨界点({critical_date})を通過。大きな崩壊リスクは後退。')
-    else: diag_results.append(f'<span class="status-warn">⚠️ 臨界:</span> 次の臨界点 {critical_date} に向けてエネルギーが蓄積中。')
-
-    for res in diag_results:
-        st.markdown(f"- {res}", unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
-
-    # --- 6. チャート描画 ---
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(x=df.index, y=df['Close'], name="Price", line=dict(color='#00f2ff', width=2)))
-    fig.add_trace(go.Scatter(x=df.index, y=df['MA25'], name="MA25", line=dict(color='#ff00ff', dash='dash')))
-    fig.update_layout(
-        paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font_color="#00f2ff",
-        height=400, margin=dict(l=0,r=0,t=20,b=0), xaxis=dict(showgrid=False), yaxis=dict(showgrid=True, gridcolor='#112244')
-    )
-    st.plotly_chart(fig, use_container_width=True)
-
-except Exception as e:
-    st.error(f"システムエラーが発生しました。銘柄名を確認してください。")
+    else:
+        st.write("▼ お返事がない。 ただの しかばね の ようだ。 (データが見つかりません)")
