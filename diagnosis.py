@@ -50,21 +50,21 @@ st.markdown("""
         margin-top: 5px;
     }
 
-    /* 5. HPバー（RSI視覚化） */
+    /* 5. HPバー（RSI視覚化）- グラフ下用 */
+    .hp-label { color: #ffffff; font-size: 1.2rem; margin-bottom: 5px; }
     .hp-container {
         width: 100%;
         background-color: #333;
-        border: 2px solid #fff;
-        height: 20px;
-        margin-top: 10px;
-        position: relative;
+        border: 4px solid #fff;
+        height: 30px;
+        margin-bottom: 10px;
     }
     .hp-fill {
         height: 100%;
         transition: width 0.5s ease-in-out;
     }
 
-    /* 6. 入力欄・メトリクス・レポート */
+    /* 6. メトリクス・レポート */
     div[data-baseweb="input"] { background-color: #000000 !important; border: 4px solid #ffffff !important; }
     input { color: #ffffff !important; background-color: #000000 !important; }
     [data-testid="stMetric"] { background-color: #000000 !important; border: 4px solid #ffffff !important; }
@@ -128,34 +128,35 @@ if ticker:
         if rsi_val > 70: hp_color = "#ff0000" # 過熱は赤
         elif rsi_val < 30: hp_color = "#ffff00" # 消耗は黄
 
+        # --- メイン画面：ステータス（元の設定に戻す） ---
         st.markdown(f"<h3>{ticker} の ステータス</h3>", unsafe_allow_html=True)
         col1, col2, col3 = st.columns(3)
         col1.metric("かかく (G)", f"{df['Close'].iloc[-1]:,.2f}")
-        
-        # RSIをHPバー付きで表示
-        with col2:
-            st.write("きりょく (RSI)")
-            st.markdown(f'''
-                <div class="hp-container">
-                    <div class="hp-fill" style="width: {rsi_val}%; background-color: {hp_color};"></div>
-                </div>
-                <div style="text-align:right; font-size: 1.5rem; color: #ffff00;">{rsi_val:.1f} / 100</div>
-            ''', unsafe_allow_html=True)
-            
+        col2.metric("きりょく (RSI)", f"{rsi_val:.1f}")
         col3.metric("かいり (DIV)", f"{((df['Close'].iloc[-1] - df['Close'].rolling(25).mean().iloc[-1]) / df['Close'].rolling(25).mean().iloc[-1] * 100):.1f}")
 
-        # レポート表示
+        # --- レポート表示 ---
         st.markdown('<div class="report-card">', unsafe_allow_html=True)
         st.write(f"▼ {stock_name} を しらべた！")
-        if rsi_val > 70: st.write("・てきは こうふんしている！ こうげきの チャンスだ！")
-        elif rsi_val < 30: st.write("・てきは つかれている！ まもなく ちからつきそうだ！")
-        else: st.write("・てきは おちついている。 ようすを うかがおう。")
+        if rsi_val > 70: st.write("・てきは こうふんしている！")
+        elif rsi_val < 30: st.write("・てきは つかれている！")
+        else: st.write("・てきは おちついている。")
         st.markdown('</div>', unsafe_allow_html=True)
 
-        # チャート
+        # --- チャート表示 ---
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=df.index, y=df['Close'], line=dict(color='#ffffff', width=3)))
         fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(family="DotGothic16", color="#ffffff"))
         st.plotly_chart(fig, use_container_width=True)
+
+        # --- ★ HPバーをグラフの下に配置 ★ ---
+        st.markdown(f'''
+            <div class="hp-label">▶ てきの きりょく (HP)</div>
+            <div class="hp-container">
+                <div class="hp-fill" style="width: {rsi_val}%; background-color: {hp_color}; shadow: 0 0 10px {hp_color};"></div>
+            </div>
+            <div style="text-align:right; font-size: 1.2rem; color: #ffffff;">{rsi_val:.1f} / 100</div>
+        ''', unsafe_allow_html=True)
+
     else:
         st.write("▼ 銘柄が みつからない。")
