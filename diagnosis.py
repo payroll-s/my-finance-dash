@@ -8,7 +8,7 @@ import plotly.graph_objects as go
 # --- ページ設定 ---
 st.set_page_config(page_title="Dragon King's Lair", layout="wide")
 
-# --- CSS：サイドバーをレンガ造りにし、ボタンをプレート化する ---
+# --- CSS：レンガの壁に漆黒のボタンを配置 ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=DotGothic16&display=swap');
@@ -21,7 +21,7 @@ st.markdown("""
 
     /* 2. サイドバーを「RPG風レンガ」に変更 */
     [data-testid="stSidebar"] {
-        background-color: #4a2c2a !important; /* レンガの基本色 */
+        background-color: #4a2c2a !important; 
         background-image: 
             linear-gradient(335deg, #2e1a18 23px, transparent 23px),
             linear-gradient(155deg, #2e1a18 23px, transparent 23px),
@@ -32,14 +32,13 @@ st.markdown("""
         border-right: 5px solid #ffffff !important;
     }
 
-    /* サイドバー内のテキストを読みやすく（黒い影付き） */
+    /* サイドバー内のテキスト（影付き） */
     [data-testid="stSidebar"] .stMarkdown, [data-testid="stSidebar"] p, [data-testid="stSidebar"] label {
         color: #ffffff !important;
         text-shadow: 2px 2px 0px #000000;
-        font-family: 'DotGothic16', sans-serif !important;
     }
 
-    /* 3. 入力欄：レンガの上でも目立つ白枠 */
+    /* 3. 【統一】入力欄：白枠・黒背景 */
     div[data-baseweb="input"] {
         background-color: #000000 !important;
         border: 4px solid #ffffff !important;
@@ -47,26 +46,37 @@ st.markdown("""
     }
     input { color: #ffffff !important; background-color: #000000 !important; }
 
-    /* 4. 呪文ボタン：レンガの壁にはめ込まれた「石板」スタイル */
-    div.stButton > button {
-        background-color: #000000 !important;
-        color: #ffffff !important;
-        border: 3px solid #ffffff !important;
-        border-radius: 0px !important;
+    /* 4. 【統一】呪文ボタン：入力欄と同じ「黒背景・白文字・白枠」に強制固定 */
+    /* サイドバー内のボタンをピンポイントで指定 */
+    section[data-testid="stSidebar"] .stButton > button {
+        background-color: #000000 !important; /* 背景：漆黒 */
+        color: #ffffff !important;           /* 文字：白 */
+        border: 4px solid #ffffff !important; /* 枠：太い白 */
+        border-radius: 0px !important;       /* 角：四角 */
         width: 100% !important;
-        text-align: center !important;
+        text-align: left !important;
         font-family: 'DotGothic16', sans-serif !important;
-        margin-bottom: 8px !important;
-        box-shadow: 4px 4px 0px #000000; /* 立体感を出す影 */
+        padding: 10px !important;
+        box-shadow: 4px 4px 0px #000000 !important; /* 黒い影 */
+        opacity: 1 !important;
     }
 
-    div.stButton > button:hover {
+    /* ホバー時：反転（白背景・黒文字） */
+    section[data-testid="stSidebar"] .stButton > button:hover {
         background-color: #ffffff !important;
         color: #000000 !important;
-        border: 3px solid #000000 !important;
+        border: 4px solid #ffffff !important;
     }
 
-    /* 5. ツールチップ（ポップアップ） */
+    /* クリック後やフォーカス時も黒背景を維持 */
+    section[data-testid="stSidebar"] .stButton > button:focus, 
+    section[data-testid="stSidebar"] .stButton > button:active {
+        background-color: #000000 !important;
+        color: #ffffff !important;
+        box-shadow: none !important;
+    }
+
+    /* 5. ツールチップ（ポップアップ）も黒白で統一 */
     div[data-baseweb="tooltip"] {
         background-color: #000000 !important;
         border: 2px solid #ffffff !important;
@@ -101,9 +111,11 @@ if 'spells' not in st.session_state:
 with st.sidebar:
     st.markdown("<h3>[ コマンド ]</h3>", unsafe_allow_html=True)
     
+    # 銘柄入力
     ticker_input = st.text_input("しらべる 銘柄コード:", value="XRP-USD").upper()
     
     st.write("▼ おぼえている じゅもん")
+    # ここに表示されるボタンを「漆黒の石板」にしました
     for i, spell in enumerate(st.session_state.spells):
         if st.button(spell["name"], key=f"btn_{i}", help=f"{spell['desc']} ({spell['ticker']})"):
             ticker_input = spell["ticker"]
@@ -117,7 +129,7 @@ with st.sidebar:
 
     ticker = ticker_input.strip()
 
-# --- 診断ロジック（省略なし） ---
+# --- 診断ロジック ---
 @st.cache_data(ttl=3600)
 def load_data(symbol):
     try:
@@ -171,6 +183,7 @@ if ticker:
             st.markdown(f'- <span style="color:#00ff00">あらしは すぎさった。 いまは しずかだ。</span>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
+        # チャート
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=df.index, y=df['Close'], name="かかく", line=dict(color='#ffffff', width=3)))
         fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(family="DotGothic16", color="#ffffff"),
