@@ -93,89 +93,75 @@ if 'spells' not in st.session_state:
         {"name": "ぶつりゅう", "ticker": "3140.T", "desc": "エーアイティー"}
     ]
 
-# --- サイドバー ---
+# --- サイドバー：コマンドウィンドウ ---
 with st.sidebar:
     st.markdown("<h3>[ コマンド ]</h3>", unsafe_allow_html=True)
     
-    # 基準となる入力欄
-    ticker_input = st.text_input("しらべる 銘柄コード:", value="XRP-USD").upper()
+    # 銘柄入力（これが基準のデザイン）
+    ticker_input = st.text_input("しらべる 銘柄コード:", value="XRP-USD", key="main_ticker_input").upper()
     
-# --- サイドバー：呪文メニュー部分 ---
     st.write("▼ おぼえている じゅもん")
     
-    # 1. ポップアップの設定は一切触れず、このメニュー内だけの限定スタイルを適用
+    # ★ 呪文メニュー専用スタイル（ポップアップには干渉しません）
     st.markdown("""
         <style>
-        /* 4つのボタンを包む白い枠 */
-        .spell-container {
+        /* 4つのボタンを包む白い枠（入力欄と同じ仕様） */
+        .spell-box {
             border: 4px solid #ffffff !important;
             background-color: #000000 !important;
             padding: 5px !important;
             margin-bottom: 20px !important;
-            display: flex;
-            flex-direction: column;
         }
 
-        /* 枠の中のボタン（入力欄と同じ仕様に強制上書き） */
-        .spell-container .stButton > button {
-            background-color: #000000 !important;
+        /* 枠の中のボタンを「文字だけの選択肢」にする */
+        .spell-box .stButton > button {
+            background-color: transparent !important;
             color: #ffffff !important;
-            border: none !important; /* 外枠があるので内側の枠は消す */
+            border: none !important;
             border-radius: 0px !important;
             width: 100% !important;
             text-align: left !important;
             font-family: 'DotGothic16', sans-serif !important;
             font-size: 1.1rem !important;
-            padding: 8px 10px !important;
-            margin: 0 !important;
-            line-height: 1.5 !important;
+            padding: 5px 10px !important;
         }
 
         /* ホバー時のみ反転 */
-        .spell-container .stButton > button:hover {
+        .spell-box .stButton > button:hover {
             background-color: #ffffff !important;
             color: #000000 !important;
         }
 
-        /* 選択中の青い影などを完全に消去 */
-        .spell-container .stButton > button:focus {
+        /* クリック時の余計なエフェクトを削除 */
+        .spell-box .stButton > button:focus {
             box-shadow: none !important;
-            color: #ffffff !important;
-            background-color: #000000 !important;
+            outline: none !important;
         }
         </style>
     """, unsafe_allow_html=True)
 
-    # 2. 1つの大きな白枠（Container）の中にボタンを配置
-    st.markdown('<div class="spell-container">', unsafe_allow_html=True)
-    for i, spell in enumerate(st.session_state.spells):
-        # 標準の st.button を使うが、上のCSSで「枠内のリスト」に変貌させる
-        if st.button(f"・{spell['name']}", key=f"spell_opt_{i}", help=f"{spell['desc']} ({spell['ticker']})"):
-            ticker_input = spell["ticker"]
-    st.markdown('</div>', unsafe_allow_html=True)
-    # --- 修正ここまで ---
-    # 1つの白枠（spell-window）の中に4つの選択肢を配置
-    st.markdown('<div class="spell-window">', unsafe_allow_html=True)
+    # 白枠の開始
+    st.markdown('<div class="spell-box">', unsafe_allow_html=True)
     
-    # Streamlitのボタンを使わず、radioや独自の仕組みで選択を受け取る
-    # ここでは一番シンプルに、標準の st.button を「文字だけのリンク風」にCSSで強制上書きして枠内に入れます
+    # 重複エラーを避けるため、一意のKey（final_spell_...）を設定
     for i, spell in enumerate(st.session_state.spells):
-        # ボタンの標準装飾を消し、枠内のリストアイテムとして振る舞わせる
-        if st.button(spell["name"], key=f"spell_opt_{i}", help=f"{spell['desc']} ({spell['ticker']})"):
+        if st.button(f"・{spell['name']}", key=f"final_spell_{i}", help=f"{spell['desc']} ({spell['ticker']})"):
             ticker_input = spell["ticker"]
-
+            
     st.markdown('</div>', unsafe_allow_html=True)
-    # --- 書き換えここまで ---
+    # 白枠の終了
 
     st.divider()
+    
+    # 「じゅもんを書き換える」部分もKeyの重複を避けるために修正
     with st.expander("じゅもんを 書き換える"):
         for i in range(len(st.session_state.spells)):
-            st.session_state.spells[i]["name"] = st.text_input(f"なまえ {i+1}", value=st.session_state.spells[i]["name"], key=f"name_{i}")
-            st.session_state.spells[i]["ticker"] = st.text_input(f"コード {i+1}", value=st.session_state.spells[i]["ticker"], key=f"tick_{i}").upper()
-            st.session_state.spells[i]["desc"] = st.text_input(f"かいせつ {i+1}", value=st.session_state.spells[i]["desc"], key=f"desc_{i}")
+            st.write(f"--- じゅもん {i+1} ---")
+            st.session_state.spells[i]["name"] = st.text_input("なまえ", value=st.session_state.spells[i]["name"], key=f"edit_name_{i}")
+            st.session_state.spells[i]["ticker"] = st.text_input("コード", value=st.session_state.spells[i]["ticker"], key=f"edit_tick_{i}").upper()
+            st.session_state.spells[i]["desc"] = st.text_input("かいせつ", value=st.session_state.spells[i]["desc"], key=f"edit_desc_{i}")
 
     ticker = ticker_input.strip()
-
 # --- 診断ロジック ---
 @st.cache_data(ttl=3600)
 def load_data(symbol):
