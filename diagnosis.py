@@ -8,7 +8,7 @@ import plotly.graph_objects as go
 # --- ページ設定 ---
 st.set_page_config(page_title="Dragon King's Lair", layout="wide")
 
-# --- CSS：サイドバーの「銘柄名リスト」をRPGコマンド化 ---
+# --- CSS：サイドバーの全テキストを白く強制発光させる ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=DotGothic16&display=swap');
@@ -29,7 +29,16 @@ st.markdown("""
         border-right: 5px solid #ffffff !important;
     }
 
-    /* 3. 入力欄：白枠・黒背景 */
+    /* 3. ★サイドバー内のすべてのテキストを強制的に白にする★ */
+    [data-testid="stSidebar"] *, 
+    [data-testid="stSidebar"] .stMarkdown p, 
+    [data-testid="stSidebar"] span, 
+    [data-testid="stSidebar"] label {
+        color: #ffffff !important;
+        text-shadow: 2px 2px 0px #000000 !important; /* 黒い影をつけてより見やすく */
+    }
+
+    /* 4. 入力欄：白枠・黒背景 */
     div[data-baseweb="input"] {
         background-color: #000000 !important;
         border: 4px solid #ffffff !important;
@@ -37,21 +46,12 @@ st.markdown("""
     }
     input { color: #ffffff !important; background-color: #000000 !important; }
 
-    /* 4. ★ 銘柄名リスト（コマンドメニュー）の装飾 ★ */
-    /* 枠全体の定義 */
+    /* 5. 銘柄名リスト（コマンドメニュー）の外枠 */
     div[data-testid="stRadio"] > div {
         background-color: #000000 !important;
         border: 4px solid #ffffff !important;
         padding: 15px !important;
         border-radius: 0px !important;
-        margin-top: 10px !important;
-    }
-
-    /* 各銘柄名のテキスト */
-    div[data-testid="stRadio"] label {
-        color: #ffffff !important;
-        font-size: 1.2rem !important;
-        background-color: transparent !important;
     }
 
     /* 標準のラジオボタンの丸を消去 */
@@ -65,27 +65,30 @@ st.markdown("""
         color: #ffffff !important;
         margin-right: 10px;
     }
-    /* 選択されていない銘柄に空白を挿入（ズレ防止） */
     div[data-testid="stRadio"] label[aria-checked="false"] p::before {
         content: "　" !important;
         margin-right: 10px;
     }
 
-    /* 5. メイン画面のステータス表示 */
+    /* 6. エクスパンダー（じゅもんを書き換える）の内側も黒背景に */
+    [data-testid="stExpander"] {
+        background-color: #000000 !important;
+        border: 2px solid #ffffff !important;
+    }
+
+    /* 7. メイン画面の装飾 */
     [data-testid="stMetric"] {
         background-color: #000000 !important;
         border: 4px solid #ffffff !important;
-        padding: 10px !important;
     }
     [data-testid="stMetricValue"] { color: #ffff00 !important; text-shadow: 2px 2px #ff0000; }
-    .report-card { border: 4px solid #ffffff; background-color: #000000; padding: 15px; }
     h1, h2, h3 { color: #ffffff !important; border-bottom: 2px solid #ffffff; }
     </style>
     """, unsafe_allow_html=True)
 
 st.markdown('<h1>▶ DRAGON KING\'S LAIR</h1>', unsafe_allow_html=True)
 
-# --- じゅもんデータ（銘柄名とティッカー） ---
+# --- じゅもんデータ ---
 if 'spells' not in st.session_state:
     st.session_state.spells = [
         {"name": "りゅうお", "ticker": "XRP-USD"},
@@ -94,38 +97,36 @@ if 'spells' not in st.session_state:
         {"name": "ぶつりゅう", "ticker": "3140.T"}
     ]
 
-# --- サイドバー：コマンドウィンドウ ---
+# --- サイドバー ---
 with st.sidebar:
     st.markdown("<h3>[ コマンド ]</h3>", unsafe_allow_html=True)
     
-    # 銘柄手入力欄
-    ticker_input_val = st.text_input("しらべる 銘柄コード:", value="XRP-USD", key="ticker_field").upper()
+    ticker_input_val = st.text_input("しらべる 銘柄コード:", value="XRP-USD", key="ticker_input_final").upper()
     
+    # ここが白文字になります
     st.write("▼ おぼえている じゅもん")
     
-    # 銘柄名をリスト化してラジオボタン（コマンドメニュー）に渡す
     spell_names = [s["name"] for s in st.session_state.spells]
-    
     selected_name = st.radio(
-        "hidden_label",
+        "hidden",
         options=spell_names,
         label_visibility="collapsed",
-        key="spell_radio"
+        key="radio_menu"
     )
 
-    # 選択された銘柄名に対応するティッカーを自動セット
     for s in st.session_state.spells:
         if s["name"] == selected_name:
-            # 選択が切り替わった時だけ入力を上書き
-            if 'last_name' not in st.session_state or st.session_state.last_name != selected_name:
+            if 'last_nm' not in st.session_state or st.session_state.last_nm != selected_name:
                 ticker_input_val = s["ticker"]
-                st.session_state.last_name = selected_name
+                st.session_state.last_nm = selected_name
 
     st.divider()
+    
+    # ここも白文字になります
     with st.expander("じゅもんを 書き換える"):
         for i in range(len(st.session_state.spells)):
-            st.session_state.spells[i]["name"] = st.text_input(f"なまえ {i+1}", value=st.session_state.spells[i]["name"], key=f"edit_n_{i}")
-            st.session_state.spells[i]["ticker"] = st.text_input(f"コード {i+1}", value=st.session_state.spells[i]["ticker"], key=f"edit_t_{i}").upper()
+            st.session_state.spells[i]["name"] = st.text_input(f"なまえ {i+1}", value=st.session_state.spells[i]["name"], key=f"ed_n_{i}")
+            st.session_state.spells[i]["ticker"] = st.text_input(f"コード {i+1}", value=st.session_state.spells[i]["ticker"], key=f"ed_t_{i}").upper()
 
     ticker = ticker_input_val.strip()
 
@@ -152,20 +153,19 @@ if ticker:
         df['MA25'] = df['Close'].rolling(window=25).mean()
         df['Divergence'] = ((df['Close'] - df['MA25']) / df['MA25']) * 100
 
-        # メイン表示
         st.markdown(f"<h3>{ticker} の ステータス</h3>", unsafe_allow_html=True)
         c1, c2, c3 = st.columns(3)
         c1.metric("かかく (G)", f"{df['Close'].iloc[-1]:,.2f}")
         c2.metric("きりょく (RSI)", f"{df['RSI'].iloc[-1]:.1f}")
         c3.metric("かいり (DIV)", f"{df['Divergence'].iloc[-1]:.1f}")
 
-        st.markdown('<div class="report-card">', unsafe_allow_html=True)
+        st.markdown('<div style="border:4px solid white; padding:15px; background:black; color:white;">', unsafe_allow_html=True)
         st.write(f"▼ {ticker} を しらべた！")
         st.write("てきの ようすを うかがっている…")
         st.markdown('</div>', unsafe_allow_html=True)
 
         fig = go.Figure()
-        fig.add_trace(go.Scatter(x=df.index, y=df['Close'], name="かかく", line=dict(color='#ffffff', width=3)))
+        fig.add_trace(go.Scatter(x=df.index, y=df['Close'], line=dict(color='#ffffff', width=3)))
         fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(family="DotGothic16", color="#ffffff"))
         st.plotly_chart(fig, use_container_width=True)
     else:
