@@ -8,105 +8,93 @@ import plotly.graph_objects as go
 # --- ページ設定 ---
 st.set_page_config(page_title="Dragon King's Lair", layout="wide")
 
-# --- 究極のドット絵・コマンドスタイル ---
+# --- CSS：Streamlitのボタンを隠し、自作ウィンドウを構築する ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=DotGothic16&display=swap');
 
-    /* 1. 基本背景 */
-    .stApp, [data-testid="stSidebar"], [data-testid="stSidebarNav"] {
+    /* 全体背景 */
+    .stApp, [data-testid="stSidebar"] {
         background-color: #000000 !important;
         font-family: 'DotGothic16', sans-serif !important;
     }
 
-    /* 2. 基本テキスト（白） */
-    html, body, [class*="css"], .stMarkdown, p, span, label, li {
+    /* 基本テキスト */
+    html, body, .stMarkdown, p, span, label {
         color: #ffffff !important;
         font-family: 'DotGothic16', sans-serif !important;
     }
 
-    /* 3. サイドバー境界線（白） */
+    /* サイドバー境界線 */
     [data-testid="stSidebar"] {
         border-right: 4px solid #ffffff !important;
     }
 
-    /* 4. 入力欄：太い白枠・中身は黒 */
+    /* 入力欄の白枠 */
     div[data-baseweb="input"] {
         background-color: #000000 !important;
         border: 4px solid #ffffff !important;
         border-radius: 0px !important;
     }
-    input {
-        color: #ffffff !important;
-        background-color: #000000 !important;
+    input { color: #ffffff !important; background-color: #000000 !important; }
+
+    /* ★ 呪文コマンドメニューの枠 ★ */
+    .command-menu {
+        border: 4px double #ffffff;
+        padding: 10px;
+        margin: 10px 0;
+        background-color: #000000;
     }
 
-    /* 5. ★ 重要：サイドバー内のボタン（呪文）を漆黒に強制固定 ★ */
-    /* カーソルを合わせる前の状態 */
-    section[data-testid="stSidebar"] .stButton > button {
-        background-color: #000000 !important;
+    /* Streamlitのボタンを「コマンド」として再定義 */
+    div.stButton > button {
+        background-color: transparent !important;
         color: #ffffff !important;
-        border: 2px solid #ffffff !important;
-        border-radius: 0px !important;
-        width: 100% !important;
+        border: none !important;
         text-align: left !important;
+        font-size: 1.2rem !important;
         font-family: 'DotGothic16', sans-serif !important;
-        box-shadow: none !important;
+        padding: 5px 0 5px 20px !important;
+        width: 100% !important;
+        transition: 0s;
     }
 
-    /* マウスを合わせた時の状態（反転） */
-    section[data-testid="stSidebar"] .stButton > button:hover {
+    /* ホバー時に「▶」を表示し、反転させる */
+    div.stButton > button:hover {
         background-color: #ffffff !important;
         color: #000000 !important;
-        border: 2px solid #ffffff !important;
+    }
+    div.stButton > button:hover::before {
+        content: "▶";
+        position: absolute;
+        left: 0;
     }
 
-    /* クリック中やクリック後も白くならないようにガード */
-    section[data-testid="stSidebar"] .stButton > button:focus, 
-    section[data-testid="stSidebar"] .stButton > button:active {
-        background-color: #000000 !important;
-        color: #ffffff !important;
-    }
-
-    /* 6. ツールチップ（黒背景・白文字・白枠） */
+    /* ポップアップ（ツールチップ） */
     div[data-baseweb="tooltip"] {
         background-color: #000000 !important;
         border: 2px solid #ffffff !important;
-        border-radius: 0px !important;
     }
     div[data-baseweb="tooltip"] * {
         color: #ffffff !important;
         background-color: #000000 !important;
     }
 
-    /* 7. メトリクス */
-    .stMetric {
+    /* メトリクス・レポート */
+    .report-card, .stMetric {
         background-color: #000000 !important;
         border: 4px solid #ffffff !important;
-        border-radius: 0px !important;
+        padding: 15px;
     }
-    [data-testid="stMetricValue"] {
-        color: #ffff00 !important;
-        text-shadow: 2px 2px #ff0000;
-    }
+    [data-testid="stMetricValue"] { color: #ffff00 !important; text-shadow: 2px 2px #ff0000; }
 
-    /* 8. レポートウィンドウ */
-    .report-card {
-        background-color: #000000 !important;
-        border: 4px solid #ffffff !important;
-        padding: 20px;
-    }
-
-    h1, h2, h3 {
-        color: #ffffff !important;
-        border-bottom: 2px solid #ffffff;
-    }
+    h1, h2, h3 { border-bottom: 2px solid #ffffff; }
     </style>
     """, unsafe_allow_html=True)
 
 st.markdown('<h1>▶ DRAGON KING\'S LAIR</h1>', unsafe_allow_html=True)
 
-# --- じゅもんデータ管理 ---
+# --- じゅもんデータ ---
 if 'spells' not in st.session_state:
     st.session_state.spells = [
         {"name": "りゅうお", "ticker": "XRP-USD", "desc": "リップル(XRP)"},
@@ -119,23 +107,27 @@ if 'spells' not in st.session_state:
 with st.sidebar:
     st.markdown("<h3>[ コマンド ]</h3>", unsafe_allow_html=True)
     
-    # 銘柄コード入力（白枠）
     ticker_input = st.text_input("しらべる 銘柄コード:", value="XRP-USD").upper()
     
     st.write("▼ おぼえている じゅもん")
-    # ここに表示される4つの枠が「呪文」ボタンです
+    
+    # --- コマンドメニューの枠を開始 ---
+    st.markdown('<div class="command-menu">', unsafe_allow_html=True)
+    
     for i, spell in enumerate(st.session_state.spells):
-        if st.button(spell["name"], key=f"btn_{i}", help=f"{spell['desc']} ({spell['ticker']})"):
+        # ボタンの背景と枠を透明化し、テキストのみを並べる
+        if st.button(f" {spell['name']}", key=f"btn_{i}", help=f"{spell['desc']} ({spell['ticker']})"):
             ticker_input = spell["ticker"]
+            
+    st.markdown('</div>', unsafe_allow_html=True)
+    # --- コマンドメニューの枠を終了 ---
 
     st.divider()
-    
     with st.expander("じゅもんを 書き換える"):
         for i in range(len(st.session_state.spells)):
-            st.write(f"--- じゅもん {i+1} ---")
-            st.session_state.spells[i]["name"] = st.text_input("なまえ", value=st.session_state.spells[i]["name"], key=f"name_{i}")
-            st.session_state.spells[i]["ticker"] = st.text_input("コード", value=st.session_state.spells[i]["ticker"], key=f"tick_{i}").upper()
-            st.session_state.spells[i]["desc"] = st.text_input("かいせつ", value=st.session_state.spells[i]["desc"], key=f"desc_{i}")
+            st.session_state.spells[i]["name"] = st.text_input(f"なまえ {i+1}", value=st.session_state.spells[i]["name"], key=f"name_{i}")
+            st.session_state.spells[i]["ticker"] = st.text_input(f"コード {i+1}", value=st.session_state.spells[i]["ticker"], key=f"tick_{i}").upper()
+            st.session_state.spells[i]["desc"] = st.text_input(f"かいせつ {i+1}", value=st.session_state.spells[i]["desc"], key=f"desc_{i}")
 
     ticker = ticker_input.strip()
 
@@ -170,7 +162,7 @@ if ticker:
         tc, m, w, a, b, c, c1, c2, O, D = lppls_model.fit(max_searches=30)
         critical_date = pd.Timestamp.fromordinal(int(tc)).strftime('%Y-%m-%d')
 
-        # ステータス表示
+        # 表示
         curr_p = df['Close'].iloc[-1]
         curr_rsi = df['RSI'].iloc[-1]
         curr_div = df['Divergence'].iloc[-1]
@@ -181,7 +173,6 @@ if ticker:
         c2.metric("きりょく (RSI)", f"{curr_rsi:.1f}")
         c3.metric("かいり (DIV)", f"{curr_div:.1f}")
 
-        # メッセージ
         st.markdown('<div class="report-card">', unsafe_allow_html=True)
         st.write(f"▼ {ticker} を しらべた！")
         today_str = pd.Timestamp.now().strftime('%Y-%m-%d')
