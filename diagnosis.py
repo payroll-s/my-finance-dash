@@ -8,15 +8,18 @@ import plotly.graph_objects as go
 # --- ページ設定 ---
 st.set_page_config(page_title="Dragon King's Lair", layout="wide")
 
-# --- CSS：レンガ壁に「絶対に白くならない」黒い窓を設置 ---
+# --- 全体スタイル定義（レンガ背景と漆黒の調和） ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=DotGothic16&display=swap');
 
-    /* 1. メイン背景 */
-    .stApp { background-color: #000000 !important; font-family: 'DotGothic16', sans-serif !important; }
+    /* 1. メイン画面の背景（漆黒） */
+    .stApp {
+        background-color: #000000 !important;
+        font-family: 'DotGothic16', sans-serif !important;
+    }
 
-    /* 2. レンガ造りのサイドバー */
+    /* 2. サイドバーを「RPG風レンガ」に変更 */
     [data-testid="stSidebar"] {
         background-color: #4a2c2a !important; 
         background-image: 
@@ -29,13 +32,13 @@ st.markdown("""
         border-right: 5px solid #ffffff !important;
     }
 
-    /* 3. テキストの視認性向上 */
+    /* サイドバー内のテキスト（影付きで可読性UP） */
     [data-testid="stSidebar"] .stMarkdown, [data-testid="stSidebar"] p, [data-testid="stSidebar"] label {
         color: #ffffff !important;
         text-shadow: 2px 2px 0px #000000;
     }
 
-    /* 4. 入力欄（マスターデザイン） */
+    /* 3. 入力欄：白枠・黒背景 */
     div[data-baseweb="input"] {
         background-color: #000000 !important;
         border: 4px solid #ffffff !important;
@@ -43,40 +46,49 @@ st.markdown("""
     }
     input { color: #ffffff !important; background-color: #000000 !important; }
 
-    /* 5. ★ 呪文ボタンの最終物理改造 ★ */
-    /* 全てのボタンのデフォルトスタイルを完全に破壊して上書き */
-    div.stButton > button {
-        background-color: #000000 !important; /* 絶対に黒 */
-        color: #ffffff !important;           /* 絶対に白 */
-        border: 4px solid #ffffff !important; /* 絶対に太い白枠 */
+    /* 4. 呪文メニュー専用：黒背景・白文字・白枠の統合ウィンドウ */
+    .spell-master-window {
+        border: 4px solid #ffffff !important;
+        background-color: #000000 !important;
+        padding: 8px !important;
+        margin: 10px 0px !important;
+    }
+
+    /* ウィンドウ内のボタン設定 */
+    .spell-master-window .stButton > button {
+        background-color: #000000 !important;
+        color: #ffffff !important;
+        border: 2px solid #ffffff !important;
         border-radius: 0px !important;
         width: 100% !important;
-        height: 50px !important;              /* 高さを出して入力欄に寄せる */
+        text-align: left !important;
         font-family: 'DotGothic16', sans-serif !important;
-        font-size: 1.2rem !important;
-        font-weight: bold !important;
-        text-align: center !important;
-        margin-top: 10px !important;
-        box-shadow: 6px 6px 0px #000000 !important; /* 強い影で立体化 */
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
+        margin-bottom: 6px !important;
+        display: block !important;
     }
 
-    /* ホバー時だけ反転させる */
-    div.stButton > button:hover {
+    /* ホバー時：白黒反転 */
+    .spell-master-window .stButton > button:hover {
         background-color: #ffffff !important;
         color: #000000 !important;
+        border: 2px solid #ffffff !important;
+    }
+
+    /* 5. ポップアップ（ツールチップ）の強制黒白設定 */
+    div[data-baseweb="tooltip"] {
+        background-color: #000000 !important;
+        border: 1px solid #ffffff !important;
+    }
+    div[data-baseweb="tooltip"] * {
+        color: #ffffff !important;
+        background-color: #000000 !important;
+    }
+
+    /* 6. メイン画面の装飾 */
+    .report-card, .stMetric {
+        background-color: #000000 !important;
         border: 4px solid #ffffff !important;
     }
-
-    /* ボタンの中の余計なレイヤーを非表示にする */
-    div.stButton > button div {
-        color: inherit !important;
-    }
-
-    /* 6. その他装飾 */
-    .report-card, .stMetric { background-color: #000000 !important; border: 4px solid #ffffff !important; }
     [data-testid="stMetricValue"] { color: #ffff00 !important; text-shadow: 2px 2px #ff0000; }
     h1, h2, h3 { color: #ffffff !important; border-bottom: 2px solid #ffffff; }
     </style>
@@ -97,71 +109,28 @@ if 'spells' not in st.session_state:
 with st.sidebar:
     st.markdown("<h3>[ コマンド ]</h3>", unsafe_allow_html=True)
     
-    # 銘柄入力（これが基準のデザイン）
-    ticker_input = st.text_input("しらべる 銘柄コード:", value="XRP-USD", key="main_ticker_input").upper()
+    # 銘柄入力
+    ticker_input = st.text_input("しらべる 銘柄コード:", value="XRP-USD", key="final_ticker_field").upper()
     
     st.write("▼ おぼえている じゅもん")
     
-    # ★ 呪文メニュー専用スタイル（ポップアップには干渉しません）
-    st.markdown("""
-        <style>
-        /* 4つのボタンを包む白い枠（入力欄と同じ仕様） */
-        .spell-box {
-            border: 4px solid #ffffff !important;
-            background-color: #000000 !important;
-            padding: 5px !important;
-            margin-bottom: 20px !important;
-        }
-
-        /* 枠の中のボタンを「文字だけの選択肢」にする */
-        .spell-box .stButton > button {
-            background-color: transparent !important;
-            color: #ffffff !important;
-            border: none !important;
-            border-radius: 0px !important;
-            width: 100% !important;
-            text-align: left !important;
-            font-family: 'DotGothic16', sans-serif !important;
-            font-size: 1.1rem !important;
-            padding: 5px 10px !important;
-        }
-
-        /* ホバー時のみ反転 */
-        .spell-box .stButton > button:hover {
-            background-color: #ffffff !important;
-            color: #000000 !important;
-        }
-
-        /* クリック時の余計なエフェクトを削除 */
-        .spell-box .stButton > button:focus {
-            box-shadow: none !important;
-            outline: none !important;
-        }
-        </style>
-    """, unsafe_allow_html=True)
-
-    # 白枠の開始
-    st.markdown('<div class="spell-box">', unsafe_allow_html=True)
-    
-    # 重複エラーを避けるため、一意のKey（final_spell_...）を設定
+    # 呪文ウィンドウ（統合白枠）
+    st.markdown('<div class="spell-master-window">', unsafe_allow_html=True)
     for i, spell in enumerate(st.session_state.spells):
-        if st.button(f"・{spell['name']}", key=f"final_spell_{i}", help=f"{spell['desc']} ({spell['ticker']})"):
+        if st.button(f" ・{spell['name']}", key=f"final_spell_btn_{i}", help=f"{spell['desc']} ({spell['ticker']})"):
             ticker_input = spell["ticker"]
-            
     st.markdown('</div>', unsafe_allow_html=True)
-    # 白枠の終了
 
     st.divider()
-    
-    # 「じゅもんを書き換える」部分もKeyの重複を避けるために修正
     with st.expander("じゅもんを 書き換える"):
         for i in range(len(st.session_state.spells)):
             st.write(f"--- じゅもん {i+1} ---")
-            st.session_state.spells[i]["name"] = st.text_input("なまえ", value=st.session_state.spells[i]["name"], key=f"edit_name_{i}")
-            st.session_state.spells[i]["ticker"] = st.text_input("コード", value=st.session_state.spells[i]["ticker"], key=f"edit_tick_{i}").upper()
-            st.session_state.spells[i]["desc"] = st.text_input("かいせつ", value=st.session_state.spells[i]["desc"], key=f"edit_desc_{i}")
+            st.session_state.spells[i]["name"] = st.text_input("なまえ", value=st.session_state.spells[i]["name"], key=f"edit_nm_{i}")
+            st.session_state.spells[i]["ticker"] = st.text_input("コード", value=st.session_state.spells[i]["ticker"], key=f"edit_tk_{i}").upper()
+            st.session_state.spells[i]["desc"] = st.text_input("かいせつ", value=st.session_state.spells[i]["desc"], key=f"edit_ds_{i}")
 
     ticker = ticker_input.strip()
+
 # --- 診断ロジック ---
 @st.cache_data(ttl=3600)
 def load_data(symbol):
@@ -193,7 +162,7 @@ if ticker:
         tc, m, w, a, b, c, c1, c2, O, D = lppls_model.fit(max_searches=30)
         critical_date = pd.Timestamp.fromordinal(int(tc)).strftime('%Y-%m-%d')
 
-        # 表示
+        # ステータス表示
         curr_p = df['Close'].iloc[-1]
         curr_rsi = df['RSI'].iloc[-1]
         curr_div = df['Divergence'].iloc[-1]
@@ -216,6 +185,7 @@ if ticker:
             st.markdown(f'- <span style="color:#00ff00">あらしは すぎさった。 いまは しずかだ。</span>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
+        # チャート
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=df.index, y=df['Close'], name="かかく", line=dict(color='#ffffff', width=3)))
         fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(family="DotGothic16", color="#ffffff"),
