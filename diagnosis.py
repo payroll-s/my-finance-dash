@@ -8,7 +8,7 @@ import plotly.graph_objects as go
 # --- ページ設定 ---
 st.set_page_config(page_title="Dragon King's Lair", layout="wide")
 
-# --- CSS：属性表示とHPバーの装飾 ---
+# --- CSS：ラベル文字の白色化とスタイル調整 ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=DotGothic16&display=swap');
@@ -50,7 +50,7 @@ st.markdown("""
         margin-top: 5px;
     }
 
-    /* 5. HPバー（RSI視覚化）- グラフ下用 */
+    /* 5. HPバー（RSI視覚化） */
     .hp-label { color: #ffffff; font-size: 1.2rem; margin-bottom: 5px; }
     .hp-container {
         width: 100%;
@@ -59,16 +59,25 @@ st.markdown("""
         height: 30px;
         margin-bottom: 10px;
     }
-    .hp-fill {
-        height: 100%;
-        transition: width 0.5s ease-in-out;
+    .hp-fill { height: 100%; transition: width 0.5s ease-in-out; }
+
+    /* 6. ★ メトリクス（ステータス）のラベルを白く強制する ★ */
+    [data-testid="stMetricLabel"] p {
+        color: #ffffff !important;
+        font-size: 1.1rem !important;
+    }
+    [data-testid="stMetric"] {
+        background-color: #000000 !important;
+        border: 4px solid #ffffff !important;
+    }
+    [data-testid="stMetricValue"] { 
+        color: #ffff00 !important; 
+        text-shadow: 2px 2px #ff0000; 
     }
 
-    /* 6. メトリクス・レポート */
+    /* 7. レポート・入力欄 */
     div[data-baseweb="input"] { background-color: #000000 !important; border: 4px solid #ffffff !important; }
     input { color: #ffffff !important; background-color: #000000 !important; }
-    [data-testid="stMetric"] { background-color: #000000 !important; border: 4px solid #ffffff !important; }
-    [data-testid="stMetricValue"] { color: #ffff00 !important; text-shadow: 2px 2px #ff0000; }
     .report-card { background-color: #000000 !important; border: 4px solid #ffffff !important; padding: 20px !important; color: #ffffff !important; }
     h1, h2, h3 { color: #ffffff !important; border-bottom: 2px solid #ffffff; }
     </style>
@@ -76,7 +85,7 @@ st.markdown("""
 
 st.markdown('<h1>▶ DRAGON KING\'S LAIR</h1>', unsafe_allow_html=True)
 
-# --- サイドバー：銘柄入力と属性表示 ---
+# --- サイドバー：入力と属性表示 ---
 with st.sidebar:
     st.markdown("<h3>[ コマンド ]</h3>", unsafe_allow_html=True)
     ticker_input = st.text_input("しらべる 銘柄コード:", value="XRP-USD").upper()
@@ -124,18 +133,18 @@ if ticker:
         rsi_val = 100 - (100 / (1 + (gain / loss))).iloc[-1]
         
         # HPバーの色決定
-        hp_color = "#00ff00" # 通常は緑
-        if rsi_val > 70: hp_color = "#ff0000" # 過熱は赤
-        elif rsi_val < 30: hp_color = "#ffff00" # 消耗は黄
+        hp_color = "#00ff00"
+        if rsi_val > 70: hp_color = "#ff0000"
+        elif rsi_val < 30: hp_color = "#ffff00"
 
-        # --- メイン画面：ステータス（元の設定に戻す） ---
+        # --- メイン画面：ステータス ---
         st.markdown(f"<h3>{ticker} の ステータス</h3>", unsafe_allow_html=True)
         col1, col2, col3 = st.columns(3)
         col1.metric("かかく (G)", f"{df['Close'].iloc[-1]:,.2f}")
         col2.metric("きりょく (RSI)", f"{rsi_val:.1f}")
         col3.metric("かいり (DIV)", f"{((df['Close'].iloc[-1] - df['Close'].rolling(25).mean().iloc[-1]) / df['Close'].rolling(25).mean().iloc[-1] * 100):.1f}")
 
-        # --- レポート表示 ---
+        # --- レポート ---
         st.markdown('<div class="report-card">', unsafe_allow_html=True)
         st.write(f"▼ {stock_name} を しらべた！")
         if rsi_val > 70: st.write("・てきは こうふんしている！")
@@ -143,20 +152,19 @@ if ticker:
         else: st.write("・てきは おちついている。")
         st.markdown('</div>', unsafe_allow_html=True)
 
-        # --- チャート表示 ---
+        # --- チャート ---
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=df.index, y=df['Close'], line=dict(color='#ffffff', width=3)))
         fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(family="DotGothic16", color="#ffffff"))
         st.plotly_chart(fig, use_container_width=True)
 
-        # --- ★ HPバーをグラフの下に配置 ★ ---
+        # --- HPバー（グラフ下） ---
         st.markdown(f'''
             <div class="hp-label">▶ てきの きりょく (HP)</div>
             <div class="hp-container">
-                <div class="hp-fill" style="width: {rsi_val}%; background-color: {hp_color}; shadow: 0 0 10px {hp_color};"></div>
+                <div class="hp-fill" style="width: {rsi_val}%; background-color: {hp_color};"></div>
             </div>
             <div style="text-align:right; font-size: 1.2rem; color: #ffffff;">{rsi_val:.1f} / 100</div>
         ''', unsafe_allow_html=True)
-
     else:
-        st.write("▼ 銘柄が みつからない。")
+        st.write("▼ お返事がない。 ただの しかばね の ようだ。")
