@@ -8,7 +8,7 @@ import plotly.graph_objects as go
 # --- ページ設定 ---
 st.set_page_config(page_title="Dragon King's Lair", layout="wide")
 
-# --- ドラクエ風：ダンジョン・スタイル（ツールチップ＆ボタン完全固定版） ---
+# --- ドラクエ風：ダンジョン・スタイル（ボタン背景問題を根絶） ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=DotGothic16&display=swap');
@@ -41,33 +41,38 @@ st.markdown("""
         background-color: #000000 !important;
     }
 
-    /* 5. 呪文ボタン：通常・ホバーの切り替えを厳格化 */
+    /* 5. ★ 呪文ボタン：Streamlitのデフォルトスタイルを完全に破壊する ★ */
     div.stButton > button {
-        background-color: #000000 !important;
-        color: #ffffff !important;
-        border: 2px solid #ffffff !important;
+        background-color: #000000 !important; /* 初期背景：黒 */
+        color: #ffffff !important;           /* 初期文字：白 */
+        border: 2px solid #ffffff !important; /* 白枠 */
         border-radius: 0px !important;
         width: 100%;
         text-align: left;
         font-family: 'DotGothic16', sans-serif !important;
+        opacity: 1 !important;
     }
 
+    /* ホバー時（カーソルを合わせた時） */
     div.stButton > button:hover {
-        background-color: #ffffff !important;
-        color: #000000 !important;
+        background-color: #ffffff !important; /* 背景：白 */
+        color: #000000 !important;           /* 文字：黒 */
+        border: 2px solid #ffffff !important;
     }
 
-    /* 6. ★ ツールチップ（ポップアップ）の完全固定 ★ */
-    /* 背景と文字色を強制指定 */
+    /* クリック後やフォーカス時も黒背景を維持 */
+    div.stButton > button:focus, div.stButton > button:active {
+        background-color: #000000 !important;
+        color: #ffffff !important;
+        box-shadow: none !important;
+    }
+
+    /* 6. ツールチップ（ポップアップ）の視認性固定 */
     div[data-baseweb="tooltip"] {
         background-color: #000000 !important;
         border: 2px solid #ffffff !important;
     }
-    
-    /* ツールチップ内のすべてのテキストを白に */
-    div[data-baseweb="tooltip"] div, 
-    div[data-baseweb="tooltip"] p, 
-    div[data-baseweb="tooltip"] span {
+    div[data-baseweb="tooltip"] * {
         color: #ffffff !important;
         background-color: #000000 !important;
     }
@@ -116,7 +121,7 @@ with st.sidebar:
     
     st.write("▼ おぼえている じゅもん")
     for i, spell in enumerate(st.session_state.spells):
-        # ボタンを配置。ヘルプに解説を入れる。
+        # 呪文ボタン
         if st.button(spell["name"], key=f"btn_{i}", help=f"{spell['desc']} ({spell['ticker']})"):
             ticker_input = spell["ticker"]
 
@@ -130,7 +135,7 @@ with st.sidebar:
 
     ticker = ticker_input.strip()
 
-# --- 診断ロジック ---
+# --- 診断ロジックは変更なし ---
 @st.cache_data(ttl=3600)
 def load_data(symbol):
     try:
