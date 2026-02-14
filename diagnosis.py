@@ -8,12 +8,12 @@ import plotly.graph_objects as go
 # --- ページ設定 ---
 st.set_page_config(page_title="Dragon King's Lair", layout="wide")
 
-# --- ドラクエ風：ダンジョン・スタイル（ボタン視認性修正版） ---
+# --- ドラクエ風：ダンジョン・スタイル（ボタン背景問題を根絶） ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=DotGothic16&display=swap');
 
-    /* 1. 全体の背景と基本フォント */
+    /* 1. 全体背景 */
     .stApp, [data-testid="stSidebar"], [data-testid="stSidebarNav"] {
         background-color: #000000 !important;
         font-family: 'DotGothic16', sans-serif !important;
@@ -25,12 +25,12 @@ st.markdown("""
         font-family: 'DotGothic16', sans-serif !important;
     }
 
-    /* 3. サイドバーの境界線 */
+    /* 3. サイドバー境界線 */
     [data-testid="stSidebar"] {
         border-right: 4px solid #ffffff !important;
     }
 
-    /* 4. 入力欄（しらべる欄）の白枠化 - 強調版 */
+    /* 4. 入力欄（白枠） */
     div[data-baseweb="input"] {
         background-color: #000000 !important;
         border: 4px solid #ffffff !important;
@@ -42,51 +42,51 @@ st.markdown("""
         font-family: 'DotGothic16', sans-serif !important;
     }
 
-    /* 5. じゅもんボタン：通常時とホバー時の色を厳格に指定 */
-    .stButton>button {
-        width: 100%;
-        background-color: #000000 !important; /* 通常時は黒 */
-        color: #ffffff !important;           /* 通常時は白 */
+    /* 5. 呪文ボタン：徹底的な色固定 */
+    /* 通常時（フォーカス中も含む） */
+    .stButton > button {
+        background-color: #000000 !important;
+        color: #ffffff !important;
         border: 2px solid #ffffff !important;
         border-radius: 0px !important;
+        width: 100%;
         text-align: left;
         font-family: 'DotGothic16', sans-serif !important;
-        display: block;
+        padding: 10px !important;
     }
-    
-    .stButton>button:hover {
-        background-color: #ffffff !important; /* カーソルを合わせたら白 */
-        color: #000000 !important;           /* カーソルを合わせたら黒 */
+
+    /* マウスホバー時・クリック中 */
+    .stButton > button:hover, .stButton > button:active, .stButton > button:focus {
+        background-color: #ffffff !important;
+        color: #000000 !important;
         border: 2px solid #ffffff !important;
     }
 
-    /* 6. ツールチップ（ポップアップ） */
-    div[data-baseweb="tooltip"] {
+    /* 6. エクスパンダー内も黒に */
+    .stExpander {
         background-color: #000000 !important;
         border: 2px solid #ffffff !important;
-        border-radius: 0px !important;
-    }
-    div[data-baseweb="tooltip"] * {
-        color: #ffffff !important;
-        background-color: #000000 !important;
     }
 
-    /* 7. メトリクスとレポートウィンドウ */
-    .report-card, .stMetric {
+    /* 7. メトリクス */
+    .stMetric {
         background-color: #000000 !important;
         border: 4px solid #ffffff !important;
-        border-radius: 0px !important;
-        padding: 20px;
     }
     [data-testid="stMetricValue"] {
         color: #ffff00 !important;
-        font-size: 2.5rem !important;
         text-shadow: 2px 2px #ff0000;
+    }
+
+    /* 8. レポートウィンドウ */
+    .report-card {
+        background-color: #000000 !important;
+        border: 4px solid #ffffff !important;
+        padding: 20px;
     }
 
     h1, h2, h3 {
         color: #ffffff !important;
-        text-align: center;
         border-bottom: 2px solid #ffffff;
     }
     </style>
@@ -103,21 +103,20 @@ if 'spells' not in st.session_state:
         {"name": "ぶつりゅう", "ticker": "3140.T", "desc": "エーアイティー"}
     ]
 
-# --- サイドバー：コマンドウィンドウ ---
+# --- サイドバー ---
 with st.sidebar:
     st.markdown("<h3>[ コマンド ]</h3>", unsafe_allow_html=True)
     
-    # 銘柄コード入力（白枠）
+    # 銘柄入力
     ticker_input = st.text_input("しらべる 銘柄コード:", value="XRP-USD").upper()
     
     st.write("▼ おぼえている じゅもん")
-    # じゅもんボタン（通常時：黒背景・白文字 / ホバー時：白背景・黒文字）
     for i, spell in enumerate(st.session_state.spells):
+        # ボタンを配置
         if st.button(spell["name"], key=f"btn_{i}", help=f"{spell['desc']} ({spell['ticker']})"):
             ticker_input = spell["ticker"]
 
     st.divider()
-    
     with st.expander("じゅもんを 書き換える"):
         for i in range(len(st.session_state.spells)):
             st.write(f"--- じゅもん {i+1} ---")
@@ -140,7 +139,6 @@ def load_data(symbol):
 
 if ticker:
     df = load_data(ticker)
-    
     if not df.empty and len(df) > 30:
         # 指標計算
         window = 14
@@ -170,22 +168,18 @@ if ticker:
         c2.metric("きりょく (RSI)", f"{curr_rsi:.1f}")
         c3.metric("かいり (DIV)", f"{curr_div:.1f}")
 
-        # メッセージウィンドウ
         st.markdown('<div class="report-card">', unsafe_allow_html=True)
         st.write(f"▼ {ticker} を しらべた！")
         today_str = pd.Timestamp.now().strftime('%Y-%m-%d')
-        
         if curr_rsi > 70: st.markdown('- <span style="color:#ff0000">てきは こうふんしている！</span>', unsafe_allow_html=True)
         elif curr_rsi < 30: st.markdown('- <span style="color:#00ff00">てきは つかれている！ チャンスだ！</span>', unsafe_allow_html=True)
         if abs(curr_div) > 15: st.markdown('- <span style="color:#ff0000">じゅもんが ぼうそうしている！</span>', unsafe_allow_html=True)
-        
         if critical_date > today_str:
             st.markdown(f'- <span style="color:#ff0000">おそろしい よかんがする… くるべきときは {critical_date}！</span>', unsafe_allow_html=True)
         else:
             st.markdown(f'- <span style="color:#00ff00">あらしは すぎさった。 いまは しずかだ。</span>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
-        # チャート
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=df.index, y=df['Close'], name="かかく", line=dict(color='#ffffff', width=3)))
         fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(family="DotGothic16", color="#ffffff"),
