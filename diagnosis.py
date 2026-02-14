@@ -35,16 +35,16 @@ st.markdown("""
         text-shadow: 2px 2px 0px #000000 !important;
     }
 
-    /* 4. ★ コマンドウィンドウ（箇条書きメニュー） ★ */
+    /* 4. ★ コマンドウィンドウ（４つの銘柄を囲う白枠） ★ */
     .command-window {
         background-color: #000000 !important;
         border: 4px solid #ffffff !important;
         padding: 15px !important;
-        margin-top: 10px !important;
+        margin: 10px 0px !important;
     }
 
-    /* ボタン（箇条書きの選択肢）を透明な背景の文字として定義 */
-    .stButton > button {
+    /* 枠内のボタン：背景を消して箇条書きテキスト風にする */
+    .command-window .stButton > button {
         background-color: transparent !important;
         color: #ffffff !important;
         border: none !important;
@@ -59,26 +59,28 @@ st.markdown("""
     }
 
     /* ホバー時に文字を黄色く光らせる */
-    .stButton > button:hover {
+    .command-window .stButton > button:hover {
         color: #ffff00 !important;
         background-color: transparent !important;
     }
 
-    /* 入力欄：白枠・黒背景 */
+    /* 5. 入力欄：白枠・黒背景 */
     div[data-baseweb="input"] {
         background-color: #000000 !important;
         border: 4px solid #ffffff !important;
+        border-radius: 0px !important;
     }
     input { color: #ffffff !important; background-color: #000000 !important; }
 
-    /* メイン画面：ステータス（メトリクス） */
+    /* 6. メイン画面：ステータス（メトリクス） */
     [data-testid="stMetric"] {
         background-color: #000000 !important;
         border: 4px solid #ffffff !important;
+        border-radius: 0px !important;
     }
     [data-testid="stMetricValue"] { color: #ffff00 !important; text-shadow: 2px 2px #ff0000; }
 
-    /* レポートカード */
+    /* 7. レポートカード */
     .report-card {
         background-color: #000000 !important;
         border: 4px solid #ffffff !important;
@@ -91,7 +93,7 @@ st.markdown("""
 
 st.markdown('<h1>▶ DRAGON KING\'S LAIR</h1>', unsafe_allow_html=True)
 
-# --- データ保持 ---
+# --- じゅもんデータ管理 ---
 if 'spells' not in st.session_state:
     st.session_state.spells = [
         {"name": "りゅうお", "ticker": "XRP-USD"},
@@ -106,26 +108,26 @@ if 'current_ticker' not in st.session_state:
 with st.sidebar:
     st.markdown("<h3>[ コマンド ]</h3>", unsafe_allow_html=True)
     
-    # 銘柄入力
-    ticker_input = st.text_input("しらべる 銘柄コード:", value=st.session_state.current_ticker, key="ticker_field").upper()
+    # 手入力銘柄コード
+    ticker_input = st.text_input("しらべる 銘柄コード:", value=st.session_state.current_ticker, key="ticker_input_field").upper()
     
     st.write("▼ おぼえている じゅもん")
     
-    # ★ コマンドウィンドウ（白枠・黒背景） ★
+    # ★ ４つのじゅもんを囲う漆黒のウィンドウ ★
     st.markdown('<div class="command-window">', unsafe_allow_html=True)
     for i, spell in enumerate(st.session_state.spells):
-        # 選択されている銘柄には「▶」をつける
-        prefix = "▶ " if st.session_state.current_ticker == spell["ticker"] else "　 "
-        if st.button(f"{prefix}{spell['name']}", key=f"cmd_{i}"):
+        # 現在選択中のものには ▶ カーソルを表示
+        cursor = "▶ " if st.session_state.current_ticker == spell["ticker"] else "　 "
+        if st.button(f"{cursor}{spell['name']}", key=f"spell_cmd_{i}"):
             st.session_state.current_ticker = spell["ticker"]
-            st.rerun() # 選択時に即座に反映
+            st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
     st.divider()
     with st.expander("じゅもんを 書き換える"):
         for i in range(len(st.session_state.spells)):
-            st.session_state.spells[i]["name"] = st.text_input(f"なまえ {i+1}", value=st.session_state.spells[i]["name"], key=f"n_{i}")
-            st.session_state.spells[i]["ticker"] = st.text_input(f"コード {i+1}", value=st.session_state.spells[i]["ticker"], key=f"t_{i}").upper()
+            st.session_state.spells[i]["name"] = st.text_input(f"なまえ {i+1}", value=st.session_state.spells[i]["name"], key=f"edit_name_{i}")
+            st.session_state.spells[i]["ticker"] = st.text_input(f"コード {i+1}", value=st.session_state.spells[i]["ticker"], key=f"edit_ticker_{i}").upper()
 
     ticker = st.session_state.current_ticker.strip()
 
@@ -143,7 +145,7 @@ def load_data(symbol):
 if ticker:
     df = load_data(ticker)
     if not df.empty and len(df) > 30:
-        # RSI, MA25, Divergence計算
+        # 指標計算 (RSI, Divergence)
         window = 14
         delta = df['Close'].diff()
         gain = (delta.where(delta > 0, 0)).rolling(window=window).mean()
@@ -160,36 +162,26 @@ if ticker:
         tc, m, w, a, b, c, c1, c2, O, D = lppls_model.fit(max_searches=30)
         critical_date = pd.Timestamp.fromordinal(int(tc)).strftime('%Y-%m-%d')
 
-        # --- メイン画面：ステータス表示 ---
+        # --- メイン表示：ステータス ---
         st.markdown(f"<h3>{ticker} の ステータス</h3>", unsafe_allow_html=True)
         col1, col2, col3 = st.columns(3)
         col1.metric("かかく (G)", f"{df['Close'].iloc[-1]:,.2f}")
         col2.metric("きりょく (RSI)", f"{df['RSI'].iloc[-1]:.1f}")
         col3.metric("かいり (DIV)", f"{df['Divergence'].iloc[-1]:.1f}")
 
-        # --- レポート表示 ---
+        # --- レポート ---
         st.markdown('<div class="report-card">', unsafe_allow_html=True)
         st.write(f"▼ {ticker} を しらべた！")
-        today_str = pd.Timestamp.now().strftime('%Y-%m-%d')
         rsi_now = df['RSI'].iloc[-1]
-        
-        if rsi_now > 70: st.markdown('- <span style="color:#ff0000">てきは こうふんしている！</span>', unsafe_allow_html=True)
-        elif rsi_now < 30: st.markdown('- <span style="color:#00ff00">てきは つかれている！ チャンスだ！</span>', unsafe_allow_html=True)
-        
-        if critical_date > today_str:
-            st.markdown(f'- <span style="color:#ff0000">おそろしい よかんがする… くるべきときは {critical_date}！</span>', unsafe_allow_html=True)
-        else:
-            st.markdown(f'- <span style="color:#00ff00">あらしは すぎさった。 いまは しずかだ。</span>', unsafe_allow_html=True)
+        if rsi_now > 70: st.write("・てきは こうふんしている！")
+        elif rsi_now < 30: st.write("・てきは つかれている！ チャンスだ！")
+        st.write(f"・うんめいのひ：{critical_date}")
         st.markdown('</div>', unsafe_allow_html=True)
 
         # チャート
         fig = go.Figure()
-        fig.add_trace(go.Scatter(x=df.index, y=df['Close'], name="かかく", line=dict(color='#ffffff', width=3)))
-        fig.update_layout(
-            paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-            font=dict(family="DotGothic16", color="#ffffff"),
-            xaxis=dict(showgrid=False), yaxis=dict(showgrid=True, gridcolor='#333333')
-        )
+        fig.add_trace(go.Scatter(x=df.index, y=df['Close'], line=dict(color='#ffffff', width=3)))
+        fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(family="DotGothic16", color="#ffffff"))
         st.plotly_chart(fig, use_container_width=True)
     else:
         st.write("▼ お返事がない。 ただの しかばね の ようだ。")
