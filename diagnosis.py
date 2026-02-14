@@ -8,29 +8,29 @@ import plotly.graph_objects as go
 # --- ページ設定 ---
 st.set_page_config(page_title="Dragon King's Lair", layout="wide")
 
-# --- ドラクエ風：ダンジョン・スタイル（ボタン背景問題を根絶） ---
+# --- 究極のドット絵・コマンドスタイル ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=DotGothic16&display=swap');
 
-    /* 1. 全体背景 */
+    /* 1. 基本背景 */
     .stApp, [data-testid="stSidebar"], [data-testid="stSidebarNav"] {
         background-color: #000000 !important;
         font-family: 'DotGothic16', sans-serif !important;
     }
 
-    /* 2. 基本テキスト */
+    /* 2. 基本テキスト（白） */
     html, body, [class*="css"], .stMarkdown, p, span, label, li {
         color: #ffffff !important;
         font-family: 'DotGothic16', sans-serif !important;
     }
 
-    /* 3. サイドバー境界線 */
+    /* 3. サイドバー境界線（白） */
     [data-testid="stSidebar"] {
         border-right: 4px solid #ffffff !important;
     }
 
-    /* 4. 入力欄（白枠） */
+    /* 4. 入力欄：太い白枠・中身は黒 */
     div[data-baseweb="input"] {
         background-color: #000000 !important;
         border: 4px solid #ffffff !important;
@@ -41,36 +41,38 @@ st.markdown("""
         background-color: #000000 !important;
     }
 
-    /* 5. ★ 呪文ボタン：Streamlitのデフォルトスタイルを完全に破壊する ★ */
-    div.stButton > button {
-        background-color: #000000 !important; /* 初期背景：黒 */
-        color: #ffffff !important;           /* 初期文字：白 */
-        border: 2px solid #ffffff !important; /* 白枠 */
-        border-radius: 0px !important;
-        width: 100%;
-        text-align: left;
-        font-family: 'DotGothic16', sans-serif !important;
-        opacity: 1 !important;
-    }
-
-    /* ホバー時（カーソルを合わせた時） */
-    div.stButton > button:hover {
-        background-color: #ffffff !important; /* 背景：白 */
-        color: #000000 !important;           /* 文字：黒 */
-        border: 2px solid #ffffff !important;
-    }
-
-    /* クリック後やフォーカス時も黒背景を維持 */
-    div.stButton > button:focus, div.stButton > button:active {
+    /* 5. ★ 重要：サイドバー内のボタン（呪文）を漆黒に強制固定 ★ */
+    /* カーソルを合わせる前の状態 */
+    section[data-testid="stSidebar"] .stButton > button {
         background-color: #000000 !important;
         color: #ffffff !important;
+        border: 2px solid #ffffff !important;
+        border-radius: 0px !important;
+        width: 100% !important;
+        text-align: left !important;
+        font-family: 'DotGothic16', sans-serif !important;
         box-shadow: none !important;
     }
 
-    /* 6. ツールチップ（ポップアップ）の視認性固定 */
+    /* マウスを合わせた時の状態（反転） */
+    section[data-testid="stSidebar"] .stButton > button:hover {
+        background-color: #ffffff !important;
+        color: #000000 !important;
+        border: 2px solid #ffffff !important;
+    }
+
+    /* クリック中やクリック後も白くならないようにガード */
+    section[data-testid="stSidebar"] .stButton > button:focus, 
+    section[data-testid="stSidebar"] .stButton > button:active {
+        background-color: #000000 !important;
+        color: #ffffff !important;
+    }
+
+    /* 6. ツールチップ（黒背景・白文字・白枠） */
     div[data-baseweb="tooltip"] {
         background-color: #000000 !important;
         border: 2px solid #ffffff !important;
+        border-radius: 0px !important;
     }
     div[data-baseweb="tooltip"] * {
         color: #ffffff !important;
@@ -81,6 +83,7 @@ st.markdown("""
     .stMetric {
         background-color: #000000 !important;
         border: 4px solid #ffffff !important;
+        border-radius: 0px !important;
     }
     [data-testid="stMetricValue"] {
         color: #ffff00 !important;
@@ -112,20 +115,21 @@ if 'spells' not in st.session_state:
         {"name": "ぶつりゅう", "ticker": "3140.T", "desc": "エーアイティー"}
     ]
 
-# --- サイドバー ---
+# --- サイドバー：コマンドウィンドウ ---
 with st.sidebar:
     st.markdown("<h3>[ コマンド ]</h3>", unsafe_allow_html=True)
     
-    # 銘柄入力（白枠）
+    # 銘柄コード入力（白枠）
     ticker_input = st.text_input("しらべる 銘柄コード:", value="XRP-USD").upper()
     
     st.write("▼ おぼえている じゅもん")
+    # ここに表示される4つの枠が「呪文」ボタンです
     for i, spell in enumerate(st.session_state.spells):
-        # 呪文ボタン
         if st.button(spell["name"], key=f"btn_{i}", help=f"{spell['desc']} ({spell['ticker']})"):
             ticker_input = spell["ticker"]
 
     st.divider()
+    
     with st.expander("じゅもんを 書き換える"):
         for i in range(len(st.session_state.spells)):
             st.write(f"--- じゅもん {i+1} ---")
@@ -135,7 +139,7 @@ with st.sidebar:
 
     ticker = ticker_input.strip()
 
-# --- 診断ロジックは変更なし ---
+# --- 診断ロジック ---
 @st.cache_data(ttl=3600)
 def load_data(symbol):
     try:
@@ -166,7 +170,7 @@ if ticker:
         tc, m, w, a, b, c, c1, c2, O, D = lppls_model.fit(max_searches=30)
         critical_date = pd.Timestamp.fromordinal(int(tc)).strftime('%Y-%m-%d')
 
-        # 表示
+        # ステータス表示
         curr_p = df['Close'].iloc[-1]
         curr_rsi = df['RSI'].iloc[-1]
         curr_div = df['Divergence'].iloc[-1]
@@ -177,6 +181,7 @@ if ticker:
         c2.metric("きりょく (RSI)", f"{curr_rsi:.1f}")
         c3.metric("かいり (DIV)", f"{curr_div:.1f}")
 
+        # メッセージ
         st.markdown('<div class="report-card">', unsafe_allow_html=True)
         st.write(f"▼ {ticker} を しらべた！")
         today_str = pd.Timestamp.now().strftime('%Y-%m-%d')
