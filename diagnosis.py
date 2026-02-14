@@ -8,7 +8,7 @@ import plotly.graph_objects as go
 # --- ページ設定 ---
 st.set_page_config(page_title="Dragon King's Lair", layout="wide")
 
-# --- CSS：サイドバーの視認性と新コマンド枠の装飾 ---
+# --- CSS：属性表示とHPバーの装飾 ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=DotGothic16&display=swap');
@@ -29,80 +29,78 @@ st.markdown("""
         border-right: 5px solid #ffffff !important;
     }
 
-    /* 3. サイドバー内のテキスト（白・影付き） */
+    /* 3. サイドバーテキスト */
     [data-testid="stSidebar"] h3, [data-testid="stSidebar"] p, [data-testid="stSidebar"] span {
         color: #ffffff !important;
         text-shadow: 2px 2px 0px #000000 !important;
     }
 
-    /* 4. ★ 新・銘柄名表示コマンド枠 ★ */
+    /* 4. 銘柄名・属性ウィンドウ */
     .name-window {
         background-color: #000000 !important;
         border: 4px solid #ffffff !important;
-        padding: 20px !important;
+        padding: 15px !important;
         margin-top: 15px !important;
         color: #ffffff !important;
-        font-size: 1.5rem !important;
         text-align: center !important;
-        min-height: 80px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+    }
+    .sector-tag {
+        color: #ffff00 !important;
+        font-size: 0.9rem !important;
+        margin-top: 5px;
     }
 
-    /* 5. 入力欄：白枠・黒背景 */
-    div[data-baseweb="input"] {
-        background-color: #000000 !important;
-        border: 4px solid #ffffff !important;
-        border-radius: 0px !important;
+    /* 5. HPバー（RSI視覚化） */
+    .hp-container {
+        width: 100%;
+        background-color: #333;
+        border: 2px solid #fff;
+        height: 20px;
+        margin-top: 10px;
+        position: relative;
     }
+    .hp-fill {
+        height: 100%;
+        transition: width 0.5s ease-in-out;
+    }
+
+    /* 6. 入力欄・メトリクス・レポート */
+    div[data-baseweb="input"] { background-color: #000000 !important; border: 4px solid #ffffff !important; }
     input { color: #ffffff !important; background-color: #000000 !important; }
-
-    /* 6. メイン画面：ステータス（メトリクス） */
-    [data-testid="stMetric"] {
-        background-color: #000000 !important;
-        border: 4px solid #ffffff !important;
-        padding: 15px !important;
-    }
-    [data-testid="stMetricLabel"] { color: #ffffff !important; }
-    [data-testid="stMetricValue"] { color: #ffff00 !important; text-shadow: 2px 2px #ff0000; font-size: 2.2rem !important; }
-
-    /* 7. レポートカード */
-    .report-card {
-        background-color: #000000 !important;
-        border: 4px solid #ffffff !important;
-        padding: 20px !important;
-        margin: 20px 0 !important;
-        color: #ffffff !important;
-    }
+    [data-testid="stMetric"] { background-color: #000000 !important; border: 4px solid #ffffff !important; }
+    [data-testid="stMetricValue"] { color: #ffff00 !important; text-shadow: 2px 2px #ff0000; }
+    .report-card { background-color: #000000 !important; border: 4px solid #ffffff !important; padding: 20px !important; color: #ffffff !important; }
     h1, h2, h3 { color: #ffffff !important; border-bottom: 2px solid #ffffff; }
     </style>
     """, unsafe_allow_html=True)
 
 st.markdown('<h1>▶ DRAGON KING\'S LAIR</h1>', unsafe_allow_html=True)
 
-# --- サイドバー：入力と銘柄名表示 ---
+# --- サイドバー：銘柄入力と属性表示 ---
 with st.sidebar:
     st.markdown("<h3>[ コマンド ]</h3>", unsafe_allow_html=True)
-    
-    # 銘柄手入力欄
     ticker_input = st.text_input("しらべる 銘柄コード:", value="XRP-USD").upper()
     ticker = ticker_input.strip()
 
-    # 銘柄情報の取得
     @st.cache_data(ttl=3600)
-    def get_stock_name(symbol):
+    def get_stock_info(symbol):
         try:
             info = yf.Ticker(symbol).info
-            return info.get('longName') or info.get('shortName') or symbol
+            name = info.get('longName') or info.get('shortName') or symbol
+            sector = info.get('sector') or info.get('quoteType') or "不明な属性"
+            return name, sector
         except:
-            return "？？？？"
+            return "？？？？", "未知の属性"
 
-    stock_name = get_stock_name(ticker) if ticker else "なし"
+    stock_name, stock_sector = get_stock_info(ticker) if ticker else ("なし", "無")
 
     st.write("▼ いまの あいて")
-    # ★ 銘柄名を表示する新コマンド枠 ★
-    st.markdown(f'<div class="name-window">▶ {stock_name}</div>', unsafe_allow_html=True)
+    st.markdown(f'''
+        <div class="name-window">
+            <div style="font-size: 1.3rem;">▶ {stock_name}</div>
+            <div class="sector-tag">【 属性: {stock_sector} 】</div>
+        </div>
+    ''', unsafe_allow_html=True)
 
 # --- 診断ロジック ---
 @st.cache_data(ttl=3600)
@@ -123,30 +121,41 @@ if ticker:
         delta = df['Close'].diff()
         gain = (delta.where(delta > 0, 0)).rolling(window=window).mean()
         loss = (-delta.where(delta < 0, 0)).rolling(window=window).mean()
-        df['RSI'] = 100 - (100 / (1 + (gain / loss)))
-        df['MA25'] = df['Close'].rolling(window=25).mean()
-        df['Divergence'] = ((df['Close'] - df['MA25']) / df['MA25']) * 100
+        rsi_val = 100 - (100 / (1 + (gain / loss))).iloc[-1]
+        
+        # HPバーの色決定
+        hp_color = "#00ff00" # 通常は緑
+        if rsi_val > 70: hp_color = "#ff0000" # 過熱は赤
+        elif rsi_val < 30: hp_color = "#ffff00" # 消耗は黄
 
-        # メイン画面：ステータス表示
         st.markdown(f"<h3>{ticker} の ステータス</h3>", unsafe_allow_html=True)
         col1, col2, col3 = st.columns(3)
         col1.metric("かかく (G)", f"{df['Close'].iloc[-1]:,.2f}")
-        col2.metric("きりょく (RSI)", f"{df['RSI'].iloc[-1]:.1f}")
-        col3.metric("かいり (DIV)", f"{df['Divergence'].iloc[-1]:.1f}")
+        
+        # RSIをHPバー付きで表示
+        with col2:
+            st.write("きりょく (RSI)")
+            st.markdown(f'''
+                <div class="hp-container">
+                    <div class="hp-fill" style="width: {rsi_val}%; background-color: {hp_color};"></div>
+                </div>
+                <div style="text-align:right; font-size: 1.5rem; color: #ffff00;">{rsi_val:.1f} / 100</div>
+            ''', unsafe_allow_html=True)
+            
+        col3.metric("かいり (DIV)", f"{((df['Close'].iloc[-1] - df['Close'].rolling(25).mean().iloc[-1]) / df['Close'].rolling(25).mean().iloc[-1] * 100):.1f}")
 
         # レポート表示
         st.markdown('<div class="report-card">', unsafe_allow_html=True)
         st.write(f"▼ {stock_name} を しらべた！")
-        rsi_val = df['RSI'].iloc[-1]
-        if rsi_val > 70: st.write("・てきは こうふんしている！")
-        elif rsi_val < 30: st.write("・てきは つかれている！")
-        st.write("・てきの ようすを うかがっている…")
+        if rsi_val > 70: st.write("・てきは こうふんしている！ こうげきの チャンスだ！")
+        elif rsi_val < 30: st.write("・てきは つかれている！ まもなく ちからつきそうだ！")
+        else: st.write("・てきは おちついている。 ようすを うかがおう。")
         st.markdown('</div>', unsafe_allow_html=True)
 
-        # チャート表示
+        # チャート
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=df.index, y=df['Close'], line=dict(color='#ffffff', width=3)))
         fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(family="DotGothic16", color="#ffffff"))
         st.plotly_chart(fig, use_container_width=True)
     else:
-        st.write("▼ お返事がない。 ただの しかばね の ようだ。")
+        st.write("▼ 銘柄が みつからない。")
