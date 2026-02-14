@@ -8,69 +8,71 @@ import plotly.graph_objects as go
 # --- ページ設定 ---
 st.set_page_config(page_title="Dragon King's Lair", layout="wide")
 
-# --- CSS：Streamlitのボタンを隠し、自作ウィンドウを構築する ---
+# --- CSS：すべての入力欄とボタンを「白枠・黒背景・白文字」に統一 ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=DotGothic16&display=swap');
 
-    /* 全体背景 */
-    .stApp, [data-testid="stSidebar"] {
+    /* 1. 全体背景 */
+    .stApp, [data-testid="stSidebar"], [data-testid="stSidebarNav"] {
         background-color: #000000 !important;
         font-family: 'DotGothic16', sans-serif !important;
     }
 
-    /* 基本テキスト */
-    html, body, .stMarkdown, p, span, label {
+    /* 2. 基本テキスト */
+    html, body, [class*="css"], .stMarkdown, p, span, label, li {
         color: #ffffff !important;
         font-family: 'DotGothic16', sans-serif !important;
     }
 
-    /* サイドバー境界線 */
+    /* 3. サイドバー境界線 */
     [data-testid="stSidebar"] {
         border-right: 4px solid #ffffff !important;
     }
 
-    /* 入力欄の白枠 */
+    /* 4. 【統一仕様】入力欄の白枠・黒背景 */
     div[data-baseweb="input"] {
         background-color: #000000 !important;
         border: 4px solid #ffffff !important;
         border-radius: 0px !important;
     }
-    input { color: #ffffff !important; background-color: #000000 !important; }
-
-    /* ★ 呪文コマンドメニューの枠 ★ */
-    .command-menu {
-        border: 4px double #ffffff;
-        padding: 10px;
-        margin: 10px 0;
-        background-color: #000000;
-    }
-
-    /* Streamlitのボタンを「コマンド」として再定義 */
-    div.stButton > button {
-        background-color: transparent !important;
+    input {
         color: #ffffff !important;
-        border: none !important;
-        text-align: left !important;
-        font-size: 1.2rem !important;
-        font-family: 'DotGothic16', sans-serif !important;
-        padding: 5px 0 5px 20px !important;
-        width: 100% !important;
-        transition: 0s;
+        background-color: #000000 !important;
     }
 
-    /* ホバー時に「▶」を表示し、反転させる */
+    /* 5. 【統一仕様】4つの呪文ボタンを「入力欄と同じ枠」に変更 */
+    div.stButton > button {
+        background-color: #000000 !important; /* 背景は黒 */
+        color: #ffffff !important;           /* 文字は白 */
+        border: 4px solid #ffffff !important; /* 入力欄と同じ太い白枠 */
+        border-radius: 0px !important;       /* 角は丸めない */
+        width: 100% !important;
+        height: auto !important;
+        padding: 10px !important;
+        text-align: left !important;
+        font-family: 'DotGothic16', sans-serif !important;
+        font-size: 1.1rem !important;
+        margin-bottom: 5px !important;
+        display: block !important;
+    }
+
+    /* マウスを合わせた時だけ少し光る（または反転） */
     div.stButton > button:hover {
         background-color: #ffffff !important;
         color: #000000 !important;
-    }
-    div.stButton > button:hover::before {
-        content: "▶";
-        position: absolute;
-        left: 0;
+        border: 4px solid #ffffff !important;
     }
 
-    /* ポップアップ（ツールチップ） */
+    /* クリック後も色が変わらないように固定 */
+    div.stButton > button:focus, div.stButton > button:active {
+        background-color: #000000 !important;
+        color: #ffffff !important;
+        border: 4px solid #ffffff !important;
+        box-shadow: none !important;
+    }
+
+    /* 6. ツールチップ（ポップアップ） */
     div[data-baseweb="tooltip"] {
         background-color: #000000 !important;
         border: 2px solid #ffffff !important;
@@ -80,21 +82,27 @@ st.markdown("""
         background-color: #000000 !important;
     }
 
-    /* メトリクス・レポート */
+    /* 7. メトリクス・レポートウィンドウ */
     .report-card, .stMetric {
         background-color: #000000 !important;
         border: 4px solid #ffffff !important;
-        padding: 15px;
+        border-radius: 0px !important;
     }
-    [data-testid="stMetricValue"] { color: #ffff00 !important; text-shadow: 2px 2px #ff0000; }
+    [data-testid="stMetricValue"] {
+        color: #ffff00 !important;
+        text-shadow: 2px 2px #ff0000;
+    }
 
-    h1, h2, h3 { border-bottom: 2px solid #ffffff; }
+    h1, h2, h3 {
+        color: #ffffff !important;
+        border-bottom: 2px solid #ffffff;
+    }
     </style>
     """, unsafe_allow_html=True)
 
 st.markdown('<h1>▶ DRAGON KING\'S LAIR</h1>', unsafe_allow_html=True)
 
-# --- じゅもんデータ ---
+# --- じゅもんデータ管理 ---
 if 'spells' not in st.session_state:
     st.session_state.spells = [
         {"name": "りゅうお", "ticker": "XRP-USD", "desc": "リップル(XRP)"},
@@ -107,22 +115,17 @@ if 'spells' not in st.session_state:
 with st.sidebar:
     st.markdown("<h3>[ コマンド ]</h3>", unsafe_allow_html=True)
     
+    # 銘柄入力欄（これが基準のスタイル）
     ticker_input = st.text_input("しらべる 銘柄コード:", value="XRP-USD").upper()
     
     st.write("▼ おぼえている じゅもん")
-    
-    # --- コマンドメニューの枠を開始 ---
-    st.markdown('<div class="command-menu">', unsafe_allow_html=True)
-    
+    # ここから4つのボタン。上記CSSにより入力欄と全く同じ「枠」になります。
     for i, spell in enumerate(st.session_state.spells):
-        # ボタンの背景と枠を透明化し、テキストのみを並べる
-        if st.button(f" {spell['name']}", key=f"btn_{i}", help=f"{spell['desc']} ({spell['ticker']})"):
+        if st.button(spell["name"], key=f"btn_{i}", help=f"{spell['desc']} ({spell['ticker']})"):
             ticker_input = spell["ticker"]
-            
-    st.markdown('</div>', unsafe_allow_html=True)
-    # --- コマンドメニューの枠を終了 ---
 
     st.divider()
+    
     with st.expander("じゅもんを 書き換える"):
         for i in range(len(st.session_state.spells)):
             st.session_state.spells[i]["name"] = st.text_input(f"なまえ {i+1}", value=st.session_state.spells[i]["name"], key=f"name_{i}")
@@ -173,6 +176,7 @@ if ticker:
         c2.metric("きりょく (RSI)", f"{curr_rsi:.1f}")
         c3.metric("かいり (DIV)", f"{curr_div:.1f}")
 
+        # メッセージ
         st.markdown('<div class="report-card">', unsafe_allow_html=True)
         st.write(f"▼ {ticker} を しらべた！")
         today_str = pd.Timestamp.now().strftime('%Y-%m-%d')
@@ -185,6 +189,7 @@ if ticker:
             st.markdown(f'- <span style="color:#00ff00">あらしは すぎさった。 いまは しずかだ。</span>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
+        # チャート
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=df.index, y=df['Close'], name="かかく", line=dict(color='#ffffff', width=3)))
         fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(family="DotGothic16", color="#ffffff"),
